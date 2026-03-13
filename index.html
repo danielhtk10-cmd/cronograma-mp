@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cronograma MP · Mantenimiento Preventivo</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f1f5f9;--surface:#fff;--surface2:#f8fafc;--border:#e2e8f0;
+  --ink:#0f172a;--ink2:#475569;--muted:#94a3b8;
+  --teal:#0d9488;--teal-l:#f0fdfa;--teal-d:#0f766e;
+  --blue:#2563eb;--blue-l:#eff6ff;
+  --amber:#d97706;--amber-l:#fffbeb;
+  --red:#dc2626;--red-l:#fef2f2;
+  --green:#16a34a;--green-l:#f0fdf4;
+  --purple:#7c3aed;--purple-l:#f5f3ff;
+  --shadow:0 1px 3px rgba(15,23,42,.06),0 4px 12px rgba(15,23,42,.04);
+  --shadow-md:0 4px 20px rgba(15,23,42,.1);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:"Outfit",sans-serif;font-size:13px;min-height:100vh;}
+.hdr{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.25);}
+.hdr-logo{font-size:20px;}
+.hdr-title{font-size:17px;font-weight:700;letter-spacing:-.3px;}
+.hdr-title span{color:#5eead4;}
+.hdr-sep{width:1px;height:20px;background:rgba(255,255,255,.15);margin:0 8px;}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,.4);font-weight:300;letter-spacing:.5px;text-transform:uppercase;}
+.hdr-sp{flex:1;}
+.period-box{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 12px;display:flex;align-items:center;gap:8px;}
+.period-box label{font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;}
+.period-box select{background:transparent;border:none;color:#fff;font-size:12px;font-family:"Outfit",sans-serif;font-weight:600;cursor:pointer;outline:none;}
+.period-box select option{background:#1e3a5f;}
+.app{display:flex;height:calc(100vh - 56px);}
+.sidebar{width:258px;min-width:258px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;}
+.main{flex:1;overflow:auto;padding:20px;}
+.sb-sec{padding:13px 14px;border-bottom:1px solid var(--border);}
+.sb-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:8px;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--ink2);transition:all .13s;margin-bottom:2px;}
+.nav-item:hover{background:var(--surface2);}
+.nav-item.active{background:var(--teal);color:#fff;}
+.nav-item .ni{font-size:14px;width:18px;text-align:center;}
+.nb{margin-left:auto;font-family:"DM Mono",monospace;font-size:9px;padding:1px 6px;border-radius:8px;background:var(--red);color:#fff;font-weight:700;}
+.nb.ok{background:var(--green);}
+.prog-wrap{padding:13px 14px;border-bottom:1px solid var(--border);}
+.prog-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+.prog-row label{font-size:10px;font-weight:600;color:var(--ink2);min-width:58px;}
+.prog-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:3px;background:var(--teal);transition:width .4s;}
+.prog-pct{font-family:"DM Mono",monospace;font-size:10px;color:var(--teal-d);font-weight:500;min-width:30px;text-align:right;}
+.trim-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:10px 14px;border-bottom:1px solid var(--border);}
+.trim-btn{padding:6px 4px;border-radius:6px;font-size:11px;font-weight:600;text-align:center;cursor:pointer;border:1.5px solid var(--border);color:var(--ink2);background:var(--surface2);transition:all .13s;line-height:1.3;}
+.trim-btn:hover{border-color:var(--teal);color:var(--teal);}
+.trim-btn.active{background:var(--teal);color:#fff;border-color:var(--teal);}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .13s;font-family:"Outfit",sans-serif;}
+.btn-teal{background:var(--teal);color:#fff;}
+.btn-teal:hover{background:var(--teal-d);}
+.btn-dark{background:var(--ink);color:#fff;}
+.btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--ink2);}
+.btn-ghost:hover{border-color:var(--teal);color:var(--teal);}
+.btn-sm{padding:4px 9px;font-size:11px;}
+.btn-red{background:var(--red);color:#fff;}
+.btn-amber{background:var(--amber);color:#fff;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.page-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap;}
+.page-title{font-size:21px;font-weight:800;letter-spacing:-.5px;}
+.page-title span{color:var(--teal);}
+.page-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:18px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 15px;box-shadow:var(--shadow);}
+.kpi-icon{font-size:17px;margin-bottom:5px;}
+.kpi-val{font-size:23px;font-weight:800;line-height:1;margin-bottom:2px;}
+.kpi-val.teal{color:var(--teal);}
+.kpi-val.red{color:var(--red);}
+.kpi-val.amber{color:var(--amber);}
+.kpi-val.green{color:var(--green);}
+.kpi-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px;}
+.card-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.card-title{font-size:13px;font-weight:700;}
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{background:var(--surface2);border-bottom:1px solid var(--border);padding:7px 11px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);text-align:left;white-space:nowrap;}
+.tbl td{border-bottom:1px solid var(--border);padding:8px 11px;font-size:12px;vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:#fafcff;}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;}
+.b-teal{background:var(--teal-l);color:var(--teal-d);}
+.b-red{background:var(--red-l);color:var(--red);}
+.b-green{background:var(--green-l);color:var(--green);}
+.b-amber{background:var(--amber-l);color:var(--amber);}
+.b-blue{background:var(--blue-l);color:var(--blue);}
+.b-purple{background:var(--purple-l);color:var(--purple);}
+.b-gray{background:var(--surface2);color:var(--muted);}
+.b-frio{background:#e0f2fe;color:#0369a1;}
+.b-caliente{background:#fef3c7;color:#92400e;}
+.cgrid-wrap{overflow-x:auto;}
+.cgrid{border-collapse:collapse;min-width:1000px;width:100%;}
+.cgrid th{background:var(--ink);color:#fff;padding:7px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:center;border:1px solid rgba(255,255,255,.1);white-space:nowrap;}
+.cgrid th.th-store{text-align:left;min-width:170px;background:#1e293b;}
+.cgrid th.th-zona{min-width:55px;background:#1e293b;}
+.cgrid td{border:1px solid var(--border);padding:4px 6px;font-size:11px;vertical-align:middle;}
+.cgrid td.td-store{font-weight:700;font-size:11px;background:var(--surface);min-width:170px;}
+.cgrid td.td-zona{font-size:10px;background:var(--surface);text-align:center;}
+.month-cell{min-width:72px;text-align:center;cursor:pointer;transition:background .12s;position:relative;}
+.month-cell:hover{background:var(--teal-l)!important;}
+.mc-done{background:#dcfce7!important;}
+.mc-partial{background:#fef9c3!important;}
+.mc-planned{background:#dbeafe!important;}
+.mc-inner{display:flex;flex-direction:column;align-items:center;gap:1px;}
+.mc-tech{font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mc-pct{font-family:"DM Mono",monospace;font-size:9px;color:var(--muted);}
+.mc-plus{color:var(--border);font-size:14px;line-height:1;}
+.prog-mini{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:2px;width:90%;}
+.prog-mini-fill{height:100%;border-radius:2px;}
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);}
+.modal{background:var(--surface);border-radius:14px;width:600px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-md);}
+.modal-lg{width:820px;}
+.mhdr{padding:18px 22px 13px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:var(--surface);z-index:1;}
+.mhdr h2{font-size:17px;font-weight:700;}
+.mhdr p{font-size:11px;color:var(--muted);margin-top:2px;}
+.mclose{background:none;border:none;font-size:17px;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:5px;}
+.mclose:hover{background:var(--surface2);color:var(--ink);}
+.mbody{padding:18px 22px;}
+.mfoot{padding:12px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:var(--surface);}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:11px;}
+.fg label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink2);}
+.fg input,.fg select,.fg textarea{background:var(--surface2);border:1.5px solid var(--border);border-radius:7px;color:var(--ink);padding:7px 10px;font-size:12px;font-family:"Outfit",sans-serif;transition:border .13s;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--teal);background:#fff;}
+.fg textarea{resize:vertical;min-height:60px;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.fi{background:var(--surface2);border:1.5px solid var(--border);border-radius:7px;color:var(--ink);padding:5px 9px;font-size:12px;font-family:"Outfit",sans-serif;}
+.fi:focus{outline:none;border-color:var(--teal);}
+.filters{display:flex;gap:7px;flex-wrap:wrap;}
+.eq-check{width:15px;height:15px;accent-color:var(--teal);cursor:pointer;}
+.equipo-tbl{width:100%;border-collapse:collapse;}
+.equipo-tbl th{background:var(--teal);color:#fff;padding:6px 9px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;text-align:left;}
+.equipo-tbl td{border-bottom:1px solid var(--border);padding:7px 9px;font-size:11px;vertical-align:middle;}
+.equipo-tbl tr:hover td{background:var(--teal-l);}
+.equipo-tbl tr:last-child td{border-bottom:none;}
+.toast{position:fixed;bottom:18px;right:18px;background:var(--ink);color:#e2e8f0;padding:9px 16px;border-radius:8px;font-weight:600;font-size:12px;z-index:500;transform:translateY(60px);opacity:0;transition:all .3s;max-width:340px;}
+.toast.show{transform:translateY(0);opacity:1;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <span class="hdr-logo">❄️</span>
+  <span class="hdr-title">Cronograma <span>MP</span></span>
+  <div class="hdr-sep"></div>
+  <span class="hdr-sub">Mantenimiento Preventivo · Equipos Frío/Calor · 30 Tiendas · 363 Equipos</span>
+  <div class="hdr-sp"></div>
+  <div class="period-box">
+    <label>AÑO</label>
+    <select id="selYear" onchange="refreshAll()"></select>
+    <label style="margin-left:10px">Q</label>
+    <select id="selTrim" onchange="onTrimChange()">
+      <option value="1">Q1 · Ene–Mar</option>
+      <option value="2">Q2 · Abr–Jun</option>
+      <option value="3">Q3 · Jul–Sep</option>
+      <option value="4">Q4 · Oct–Dic</option>
+    </select>
+  </div>
+  <div style="margin-left:10px;display:flex;gap:6px;">
+    <button class="btn btn-ghost" style="border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.7);font-size:11px" onclick="exportExcel()">⬇ Excel</button>
+    <button class="btn btn-teal" style="font-size:11px" onclick="openModal('mAsignar')">+ Asignar MP</button>
+  </div>
+</div>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sb-sec">
+      <div class="sb-lbl">Navegación</div>
+      <div class="nav-item active" onclick="navTo('dashboard',this)"><span class="ni">📊</span>Dashboard</div>
+      <div class="nav-item" onclick="navTo('cronograma',this)"><span class="ni">📅</span>Cronograma Anual</div>
+      <div class="nav-item" onclick="navTo('tiendas',this)"><span class="ni">🏪</span>Tiendas &amp; Equipos</div>
+      <div class="nav-item" onclick="navTo('ejecucion',this)"><span class="ni">✅</span>Registro MP <span class="nb" id="nbPend">0</span></div>
+      <div class="nav-item" onclick="navTo('tecnicos',this)"><span class="ni">👷</span>Técnicos / Proveedores</div>
+    </div>
+    <div class="prog-wrap">
+      <div class="sb-lbl">Avance Q actual</div>
+      <div class="prog-row"><label>Lima</label><div class="prog-bar"><div class="prog-fill" id="pgLima" style="width:0%"></div></div><span class="prog-pct" id="pgLimaPct">0%</span></div>
+      <div class="prog-row"><label>Provincia</label><div class="prog-bar"><div class="prog-fill" id="pgProv" style="width:0%;background:var(--purple)"></div></div><span class="prog-pct" id="pgProvPct" style="color:var(--purple)">0%</span></div>
+      <div class="prog-row"><label style="font-weight:700;color:var(--ink)">Total</label><div class="prog-bar"><div class="prog-fill" id="pgTotal" style="width:0%"></div></div><span class="prog-pct" id="pgTotalPct">0%</span></div>
+    </div>
+    <div class="trim-grid">
+      <div class="trim-btn" id="tb1" onclick="setTrim(1)">Q1<br><small>Ene–Mar</small></div>
+      <div class="trim-btn" id="tb2" onclick="setTrim(2)">Q2<br><small>Abr–Jun</small></div>
+      <div class="trim-btn" id="tb3" onclick="setTrim(3)">Q3<br><small>Jul–Sep</small></div>
+      <div class="trim-btn" id="tb4" onclick="setTrim(4)">Q4<br><small>Oct–Dic</small></div>
+    </div>
+    <div class="sb-sec" style="flex:1">
+      <div class="sb-lbl">Resumen tiendas</div>
+      <div id="sbResumen" style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--ink2)"></div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div id="tab-dashboard" class="tab-panel active">
+      <div class="page-hdr">
+        <div><div class="page-title">Dashboard <span>Preventivos</span></div>
+        <div class="page-sub">Trimestral · 30 tiendas · 363 equipos · Lima 19 tiendas / Provincia 11 tiendas</div></div>
+        <button class="btn btn-teal" onclick="openModal('mAsignar')">+ Asignar MP</button>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-icon">🏪</div><div class="kpi-val teal" id="kTiendas">30</div><div class="kpi-lbl">Tiendas</div></div>
+        <div class="kpi"><div class="kpi-icon">✅</div><div class="kpi-val green" id="kDone">0</div><div class="kpi-lbl">Completados</div></div>
+        <div class="kpi"><div class="kpi-icon">🔄</div><div class="kpi-val amber" id="kParcial">0</div><div class="kpi-lbl">En progreso</div></div>
+        <div class="kpi"><div class="kpi-icon">⏳</div><div class="kpi-val red" id="kPend">0</div><div class="kpi-lbl">Sin programar</div></div>
+        <div class="kpi"><div class="kpi-icon">🔧</div><div class="kpi-val" id="kEq">363</div><div class="kpi-lbl">Equipos</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">📍 Lima (19 tiendas)</span></div>
+          <div style="overflow-x:auto"><table class="tbl" id="dashLima"><tbody></tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">🗺 Provincia (11 tiendas)</span></div>
+          <div style="overflow-x:auto"><table class="tbl" id="dashProv"><tbody></tbody></table></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">👷 Carga por Técnico / Proveedor</span></div>
+        <div style="overflow-x:auto"><table class="tbl" id="dashTech"><tbody></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- CRONOGRAMA -->
+    <div id="tab-cronograma" class="tab-panel">
+      <div class="page-hdr">
+        <div><div class="page-title">Cronograma <span>Anual</span></div>
+        <div class="page-sub">Haz clic en cualquier celda para asignar MP · Verde=Completado · Amarillo=Progreso · Azul=Programado</div></div>
+        <div class="filters">
+          <select class="fi" id="cgZona" onchange="renderCronograma()"><option value="">Todas</option><option>LIMA</option><option>PROVINCIA</option></select>
+          <select class="fi" id="cgTech" onchange="renderCronograma()"><option value="">Todos técnicos</option></select>
+        </div>
+      </div>
+      <div class="card"><div class="cgrid-wrap" id="cgWrap"></div></div>
+    </div>
+
+    <!-- TIENDAS & EQUIPOS -->
+    <div id="tab-tiendas" class="tab-panel">
+      <div class="page-hdr">
+        <div><div class="page-title">Tiendas &amp; <span>Equipos</span></div>
+        <div class="page-sub">30 tiendas · 363 equipos reales de tu Excel</div></div>
+        <button class="btn btn-teal" onclick="openModal('mAsignar')">+ Asignar MP</button>
+      </div>
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">Catálogo de tiendas</span>
+          <div class="filters">
+            <input class="fi" type="text" id="fTSearch" placeholder="🔍 Buscar tienda..." oninput="renderTiendas()">
+            <select class="fi" id="fTZona" onchange="renderTiendas()"><option value="">Todas</option><option>LIMA</option><option>PROVINCIA</option></select>
+          </div>
+        </div>
+        <div style="overflow-x:auto"><table class="tbl" id="tiendaTbl">
+          <thead><tr><th>#</th><th>TIENDA</th><th>ZONA</th><th>CIUDAD</th><th>EQUIPOS</th><th>TÉCNICO/PROV.</th><th>ÚLTIMO MP</th><th>PRÓX. MP</th><th></th></tr></thead>
+          <tbody id="tiendaBody"></tbody>
+        </table></div>
+      </div>
+      <!-- Equipo detail -->
+      <div class="card" id="eqDetailCard" style="display:none">
+        <div class="card-hdr">
+          <span class="card-title" id="eqDetailTitle">Equipos de tienda</span>
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('eqDetailCard').style.display='none'">✕ Cerrar</button>
+        </div>
+        <div style="overflow-x:auto"><table class="equipo-tbl" id="eqDetailTbl">
+          <thead><tr><th>NRO.</th><th>NOMBRE DEL EQUIPO</th><th>TIPO</th><th>FRIO/CAL.</th><th>UBICACIÓN</th><th>CARACTERÍSTICA</th><th>MARCA</th><th>SERIE</th><th>VOLTAJE</th></tr></thead>
+          <tbody id="eqDetailBody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- EJECUCIÓN -->
+    <div id="tab-ejecucion" class="tab-panel">
+      <div class="page-hdr">
+        <div><div class="page-title">Registro de <span>Ejecución</span></div>
+        <div class="page-sub">Marca equipos revisados por tienda en el trimestre seleccionado</div></div>
+        <div class="filters">
+          <select class="fi" id="fEjTienda" onchange="renderEjecucion()"><option value="">Todas las tiendas</option></select>
+          <select class="fi" id="fEjTech" onchange="renderEjecucion()"><option value="">Todos los técnicos</option></select>
+          <select class="fi" id="fEjEstado" onchange="renderEjecucion()"><option value="">Todos</option><option value="completado">Completado</option><option value="parcial">En progreso</option><option value="pendiente">Pendiente</option></select>
+        </div>
+      </div>
+      <div id="ejecucionCards"></div>
+    </div>
+
+    <!-- TÉCNICOS -->
+    <div id="tab-tecnicos" class="tab-panel">
+      <div class="page-hdr">
+        <div><div class="page-title">Técnicos &amp; <span>Proveedores</span></div></div>
+        <button class="btn btn-teal" onclick="openModal('mTecnico')">+ Agregar</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">👷 Técnicos Lima</span></div>
+          <table class="tbl"><thead><tr><th>TÉCNICO</th><th>MP Q ACTUAL</th><th>TIENDAS</th><th></th></tr></thead><tbody id="techLimaBody"></tbody></table>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">🏢 Proveedores Provincia</span></div>
+          <table class="tbl"><thead><tr><th>PROVEEDOR</th><th>REGIÓN</th><th>MP Q ACTUAL</th><th>TIENDAS</th><th></th></tr></thead><tbody id="provBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: ASIGNAR MP -->
+<div class="modal-overlay" id="mAsignar" style="display:none" onclick="if(event.target===this)closeModal('mAsignar')">
+  <div class="modal">
+    <div class="mhdr"><div><h2>Asignar Mantenimiento Preventivo</h2><p>Programa un MP para una tienda en un trimestre específico</p></div><button class="mclose" onclick="closeModal('mAsignar')">✕</button></div>
+    <div class="mbody">
+      <div class="frow">
+        <div class="fg"><label>Tienda *</label><select id="aTienda" onchange="updateAEquipos()"><option value="">— Selecciona —</option></select></div>
+        <div class="fg"><label>Técnico / Proveedor *</label><select id="aTecnico"><option value="">— Selecciona —</option></select></div>
+      </div>
+      <div class="frow3">
+        <div class="fg"><label>Año</label><input type="number" id="aYear" min="2024" max="2030"></div>
+        <div class="fg"><label>Mes inicio *</label>
+          <select id="aMesIni" onchange="autoMesFin()">
+            <option value="0">Enero</option><option value="1">Febrero</option><option value="2">Marzo</option>
+            <option value="3">Abril</option><option value="4">Mayo</option><option value="5">Junio</option>
+            <option value="6">Julio</option><option value="7">Agosto</option><option value="8">Septiembre</option>
+            <option value="9">Octubre</option><option value="10">Noviembre</option><option value="11">Diciembre</option>
+          </select>
+        </div>
+        <div class="fg"><label>Mes fin *</label>
+          <select id="aMesFin">
+            <option value="0">Enero</option><option value="1">Febrero</option><option value="2">Marzo</option>
+            <option value="3">Abril</option><option value="4">Mayo</option><option value="5">Junio</option>
+            <option value="6">Julio</option><option value="7">Agosto</option><option value="8">Septiembre</option>
+            <option value="9">Octubre</option><option value="10">Noviembre</option><option value="11">Diciembre</option>
+          </select>
+        </div>
+      </div>
+      <div style="background:var(--teal-l);border:1px solid #99f6e4;border-radius:7px;padding:7px 11px;font-size:11px;color:var(--teal-d);margin-bottom:10px" id="aMesesPreview"></div>
+      <div class="frow">
+        <div class="fg"><label>Fecha inicio exacta</label><input type="date" id="aFechaIni"></div>
+        <div class="fg"><label>Fecha fin estimada</label><input type="date" id="aFechaFin"></div>
+      </div>
+      <div class="fg"><label>Observaciones</label><textarea id="aNotas" placeholder="Coordinaciones, accesos especiales..."></textarea></div>
+      <div class="fg"><label>Equipos incluidos en esta visita</label>
+        <div id="aEqList" style="max-height:220px;overflow-y:auto;background:var(--surface2);border:1.5px solid var(--border);border-radius:7px;padding:8px 10px;display:flex;flex-direction:column;gap:3px">
+          <span style="color:var(--muted);font-size:11px">Selecciona una tienda para ver sus equipos</span>
+        </div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="closeModal('mAsignar')">Cancelar</button>
+      <button class="btn btn-teal" onclick="saveAsignacion()">Guardar MP</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EJECUTAR MP -->
+<div class="modal-overlay" id="mEjecutar" style="display:none" onclick="if(event.target===this)closeModal('mEjecutar')">
+  <div class="modal modal-lg">
+    <div class="mhdr"><div><h2 id="mEjTitulo">Ejecutar MP</h2><p id="mEjSub"></p></div><button class="mclose" onclick="closeModal('mEjecutar')">✕</button></div>
+    <div class="mbody">
+      <div class="frow" style="margin-bottom:8px">
+        <div class="fg"><label>Fecha ejecución</label><input type="date" id="ejFecha"></div>
+        <div class="fg"><label>Técnico / Proveedor</label><input type="text" id="ejTech" readonly style="background:var(--surface2)"></div>
+      </div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px">Checklist de equipos</div>
+      <div id="ejChecklist" style="max-height:420px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;"></div>
+      <div class="fg" style="margin-top:12px"><label>Observaciones / Materiales usados</label><textarea id="ejObs" placeholder="Anota problemas, materiales, acciones pendientes..."></textarea></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="closeModal('mEjecutar')">Cancelar</button>
+      <button class="btn btn-amber" onclick="saveEj(false)">💾 Guardar parcial</button>
+      <button class="btn btn-teal" onclick="saveEj(true)">✅ Completado</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TÉCNICO -->
+<div class="modal-overlay" id="mTecnico" style="display:none" onclick="if(event.target===this)closeModal('mTecnico')">
+  <div class="modal">
+    <div class="mhdr"><div><h2>Agregar Técnico / Proveedor</h2></div><button class="mclose" onclick="closeModal('mTecnico')">✕</button></div>
+    <div class="mbody">
+      <div class="frow"><div class="fg"><label>Nombre *</label><input type="text" id="tcNombre"></div>
+      <div class="fg"><label>Tipo</label><select id="tcTipo"><option value="tecnico">Técnico Lima</option><option value="proveedor">Proveedor Provincia</option></select></div></div>
+      <div class="frow"><div class="fg"><label>Región</label><input type="text" id="tcRegion" placeholder="Ej: Lima Norte, Cusco-Puno..."></div>
+      <div class="fg"><label>Contacto</label><input type="text" id="tcContacto"></div></div>
+    </div>
+    <div class="mfoot"><button class="btn btn-ghost" onclick="closeModal('mTecnico')">Cancelar</button><button class="btn btn-teal" onclick="saveTecnico()">Guardar</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATOS REALES DESDE EXCEL ──
+var TIENDAS_DATA = [{"id": 1, "nombre": "OG ANGAMOS", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 2, "nombre": "OG BEGONIAS", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 3, "nombre": "OG BELLAVISTA", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 4, "nombre": "OG BRASIL", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 5, "nombre": "OG CANEPA", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 6, "nombre": "OG CENTRO CIVICO", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 7, "nombre": "OG CUSCO", "zona": "PROVINCIA", "ciudad": "Cusco", "proveedor": "Frío Sur SAC", "supervisor": ""}, {"id": 8, "nombre": "OG DARK KITCHEN", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 9, "nombre": "OG HUANCAYO", "zona": "PROVINCIA", "ciudad": "Huancayo", "proveedor": "Frío Centro SAC", "supervisor": ""}, {"id": 10, "nombre": "OG ICA", "zona": "PROVINCIA", "ciudad": "Ica", "proveedor": "Frío Sur SAC", "supervisor": ""}, {"id": 11, "nombre": "OG JOCKEY PLAZA", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 12, "nombre": "OG JULIACA", "zona": "PROVINCIA", "ciudad": "Juliaca", "proveedor": "Frío Sur SAC", "supervisor": ""}, {"id": 13, "nombre": "OG LAMBRAMANI", "zona": "PROVINCIA", "ciudad": "Arequipa", "proveedor": "Frío Sur SAC", "supervisor": ""}, {"id": 14, "nombre": "OG LIMA SUR", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 15, "nombre": "OG MALL AREQUIPA", "zona": "PROVINCIA", "ciudad": "Arequipa", "proveedor": "Frío Sur SAC", "supervisor": ""}, {"id": 16, "nombre": "OG MALL CHICLAYO", "zona": "PROVINCIA", "ciudad": "Chiclayo", "proveedor": "Frío Norte SAC", "supervisor": ""}, {"id": 17, "nombre": "OG MALL DEL SUR", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 18, "nombre": "OG MALL TRUJILLO", "zona": "PROVINCIA", "ciudad": "Trujillo", "proveedor": "Frío Norte SAC", "supervisor": ""}, {"id": 19, "nombre": "OG MEGAPLAZA", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 20, "nombre": "OG PIURA", "zona": "PROVINCIA", "ciudad": "Piura", "proveedor": "Frío Norte SAC", "supervisor": ""}, {"id": 21, "nombre": "OG PLAZA NORTE", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 22, "nombre": "OG PRIMAVERA", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 23, "nombre": "OG PURUCHUCO", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 24, "nombre": "OG REAL AREQUIPA", "zona": "PROVINCIA", "ciudad": "Arequipa", "proveedor": "Frío Sur SAC", "supervisor": ""}, {"id": 25, "nombre": "OG REAL CHICLAYO", "zona": "PROVINCIA", "ciudad": "Chiclayo", "proveedor": "Frío Norte SAC", "supervisor": ""}, {"id": 26, "nombre": "OG SALAVERRY", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 27, "nombre": "OG SAN BORJA", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 28, "nombre": "OG SAN JUAN DE LURIGANCHO", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 29, "nombre": "OG SAN MIGUEL", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}, {"id": 30, "nombre": "OG SANTA ANITA", "zona": "LIMA", "ciudad": "Lima", "proveedor": "", "supervisor": ""}];
+var EQUIPOS_DATA = [{"id": 1, "tiendaId": 1, "tipo": "CONGELADOR VERTICAL", "nombre": "CONGELADOR VERTICAL", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 2, "tiendaId": 1, "tipo": "CONGELADORA", "nombre": "CONGELADORA", "nro": "EQUIPO 2", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "1", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 3, "tiendaId": 1, "tipo": "REFRIGERADOR", "nombre": "CONSERVADOR DE GASEOSAS", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "1", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 4, "tiendaId": 1, "tipo": "CONGELADOR", "nombre": "CONGELACIÓN", "nro": "EQUIPO 4", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 5, "tiendaId": 1, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 6, "tiendaId": 1, "tipo": "REFRIGERADOR", "nombre": "MESA DE TRABAJO", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 7, "tiendaId": 1, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADORA", "nro": "EQUIPO 7", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -07", "marca": "SURCO", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 8, "tiendaId": 1, "tipo": "CONGELADOR", "nombre": "CONGELADOR DE CARNE", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 9, "tiendaId": 1, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "2 POZAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 10, "tiendaId": 1, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA DE HORNILLAS", "nro": "EQUIPO 10", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "3 HORNILLAS", "puertas": "", "serie": "2026 -10", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 11, "tiendaId": 1, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 11", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -11", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 12, "tiendaId": 1, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 12", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -12", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 13, "tiendaId": 1, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 13", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -13", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 14, "tiendaId": 2, "tipo": "CONGELADOR", "nombre": "CONGELADOR", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 15, "tiendaId": 2, "tipo": "CONSERVADOR", "nombre": "CONSERVADOR DE PAPAS", "nro": "EQUIPO 2", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 16, "tiendaId": 2, "tipo": "CONGELADOR", "nombre": "EQUIPO CONGELACIÓN", "nro": "EQUIPO 3", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "4", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 17, "tiendaId": 2, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 18, "tiendaId": 2, "tipo": "REFRIGERADOR", "nombre": "MESA PARRILLA", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 19, "tiendaId": 2, "tipo": "REFRIGERADOR", "nombre": "TOPPING PARRILLA", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 20, "tiendaId": 2, "tipo": "REFRIGERADOR", "nombre": "VERTICAL DE COCINA", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 21, "tiendaId": 2, "tipo": "REFRIGERADOR", "nombre": "DESCONGELACIÓN", "nro": "EQUIPO 8", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "1", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 22, "tiendaId": 2, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TAVOLA", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "2 POZAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 23, "tiendaId": 2, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA DE HORNILLAS", "nro": "EQUIPO 10", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "3 HORNILLAS", "puertas": "", "serie": "2026 -10", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 24, "tiendaId": 2, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 11", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -11", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 25, "tiendaId": 2, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 12", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -12", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 26, "tiendaId": 2, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 13", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -13", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 27, "tiendaId": 3, "tipo": "CONGELADOR", "nombre": "CONGELADOR DE   PAPAS", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "1", "serie": "2026 -01", "marca": "TURBO AIR", "modelo": "INTERNACIONAL", "voltaje": "220"}, {"id": 28, "tiendaId": 3, "tipo": "CONGELADOR", "nombre": "CONGELADOR DE CARNES", "nro": "EQUIPO 2", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 29, "tiendaId": 3, "tipo": "REFRIGERADOR", "nombre": "CONSERVADOR DE COCINA", "nro": "EQUIPO 3", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 30, "tiendaId": 3, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 31, "tiendaId": 3, "tipo": "REFRIGERADOR", "nombre": "MESA DE TRABAJO PARRILA", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "4", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 32, "tiendaId": 3, "tipo": "REFRIGERADOR", "nombre": "TOPING DE PARRILLA", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 33, "tiendaId": 3, "tipo": "REFRIGERADOR", "nombre": "EQUIPO DE DESCONGELACIÓN", "nro": "EQUIPO 7", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "1", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 34, "tiendaId": 3, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 8", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "HORIZONTAL", "puertas": "", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 35, "tiendaId": 3, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA", "nro": "EQUIPO 9", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "1 HORNILLA", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 36, "tiendaId": 3, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 10", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 37, "tiendaId": 3, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 11", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 38, "tiendaId": 3, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 12", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -12", "marca": "INDUSTRIAS SURCO", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 39, "tiendaId": 3, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA", "nro": "EQUIPO 13", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "2 HORNILLAS", "puertas": "", "serie": "2026 -13", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 40, "tiendaId": 4, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR", "nro": "EQUIPO 1", "ubicacion": "PRODUCCIÓN", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 41, "tiendaId": 4, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 42, "tiendaId": 4, "tipo": "REFRIGERADOR", "nombre": "REFRIGERACIÓN", "nro": "EQUIPO 3", "ubicacion": "PRODUCCIÓN", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 43, "tiendaId": 4, "tipo": "REFRIGERADOR", "nombre": "TOPPING DE PARRILLA", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 44, "tiendaId": 4, "tipo": "REFRIGERADOR", "nombre": "VERTICAL 2 PUERTAS", "nro": "EQUIPO 5", "ubicacion": "PRODUCCIÓN", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 45, "tiendaId": 4, "tipo": "REFRIGERADOR", "nombre": "VERTICAL DESCONGEALCIÓN", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 46, "tiendaId": 4, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 7", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "HORIZONTAL", "puertas": "", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 47, "tiendaId": 4, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA DE HORNILLAS", "nro": "EQUIPO 8", "ubicacion": "PRODUCCIÓN", "frio_caliente": "CALIENTE", "caracteristica": "2 HORNILAS", "puertas": "", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 48, "tiendaId": 4, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 9", "ubicacion": "PRODUCCIÓN", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -09", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 49, "tiendaId": 4, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 50, "tiendaId": 4, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 11", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -11", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 51, "tiendaId": 5, "tipo": "CONGELADOR", "nombre": "CONGELADOR", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 52, "tiendaId": 5, "tipo": "REFRIGERADOR", "nombre": "REFRIGERACIÓN", "nro": "EQUIPO 2", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 53, "tiendaId": 5, "tipo": "REFRIGERADOR", "nombre": "REFRIGERACIÓN", "nro": "EQUIPO 3", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 54, "tiendaId": 5, "tipo": "REFRIGERADOR", "nombre": "VERTICAL DESCONGELACIÓN", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 55, "tiendaId": 5, "tipo": "REFRIGERADOR", "nombre": "MESA DESCONGELACIÓN", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 56, "tiendaId": 5, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "CALOR", "caracteristica": "2 POZAS", "puertas": "", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 57, "tiendaId": 5, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA DE HORNILLAS", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "CALOR", "caracteristica": "3 HORNILLAS", "puertas": "", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 58, "tiendaId": 5, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "CALOR", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -08", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 59, "tiendaId": 5, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "CALOR", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 60, "tiendaId": 5, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "CALOR", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 61, "tiendaId": 6, "tipo": "CONGELADOR", "nombre": "CONGELADOR", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 62, "tiendaId": 6, "tipo": "CONGELADOR", "nombre": "CONGELADOR TURBO AIR", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 63, "tiendaId": 6, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 64, "tiendaId": 6, "tipo": "REFRIGERADOR", "nombre": "MESA PARRILLA", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 65, "tiendaId": 6, "tipo": "REFRIGERADOR", "nombre": "TOPINERA", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 66, "tiendaId": 6, "tipo": "REFRIGERADOR", "nombre": "VERTICAL DE COCINA", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "1", "serie": "2026 -06", "marca": "TURBO AIR", "modelo": "INTERNACIONAL", "voltaje": "220"}, {"id": 67, "tiendaId": 6, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 7", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "HORIZONTAL", "puertas": "", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 68, "tiendaId": 6, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA DE HORNILLAS", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "3 HORNILLAS", "puertas": "", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 69, "tiendaId": 6, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 9", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -09", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 70, "tiendaId": 6, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 71, "tiendaId": 6, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 11", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -11", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 72, "tiendaId": 11, "tipo": "CONGELADOR", "nombre": "CONGELADOR", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 73, "tiendaId": 11, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 74, "tiendaId": 11, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR", "nro": "EQUIPO 3", "ubicacion": "", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "3", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 75, "tiendaId": 11, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR DE PRODUCTOS PROCESADOS", "nro": "EQUIPO 4", "ubicacion": "", "frio_caliente": "FRIO", "caracteristica": "", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 76, "tiendaId": 11, "tipo": "REFRIGERADOR", "nombre": "TOPPING PARRILLA", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 77, "tiendaId": 11, "tipo": "REFRIGERADOR", "nombre": "EQUIPO VERTICAL DE CONGELACIÓN", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 78, "tiendaId": 11, "tipo": "REFRIGERADOR", "nombre": "REGRIGERADOR", "nro": "EQUIPO 7", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "3", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 79, "tiendaId": 11, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 8", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "3 POZAS", "puertas": "", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 80, "tiendaId": 11, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA DE HORNILLAS", "nro": "EQUIPO 9", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "3 HORNILLAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 81, "tiendaId": 11, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 10", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 82, "tiendaId": 11, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 11", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 83, "tiendaId": 11, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 12", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -12", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 84, "tiendaId": 14, "tipo": "CONGELADOR", "nombre": "CONGELADOR", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 85, "tiendaId": 14, "tipo": "CONGELADOR", "nombre": "CONGELADORA", "nro": "EQUIPO 2", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "1", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 86, "tiendaId": 14, "tipo": "REFRIGERADOR", "nombre": "CONSERVADORA DE BEBIDAS", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 87, "tiendaId": 14, "tipo": "CONGELADOR", "nombre": "CONSERVADORA DE CARNE", "nro": "EQUIPO 4", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 88, "tiendaId": 14, "tipo": "REFRIGERADOR", "nombre": "MESA DE PARRILLA", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 89, "tiendaId": 14, "tipo": "REFRIGERADOR", "nombre": "VERTICAL DE COCINA", "nro": "EQUIPO 6", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 90, "tiendaId": 14, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 7", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "2 POZAS", "puertas": "", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 91, "tiendaId": 14, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA DE HORNILLAS", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "2 HORNILLAS", "puertas": "", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 92, "tiendaId": 14, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 9", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -09", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 93, "tiendaId": 14, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 94, "tiendaId": 14, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 11", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -11", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 95, "tiendaId": 17, "tipo": "CONGELADOR", "nombre": "CONGELADOR DE PAPAS", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "1", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 96, "tiendaId": 17, "tipo": "REFRIGERADOR", "nombre": "CONSERVADOR DE GASEOSAS", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 97, "tiendaId": 17, "tipo": "CONGELADOR", "nombre": "CONSERVADOR DE PAPAS", "nro": "EQUIPO 3", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "1", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 98, "tiendaId": 17, "tipo": "REFRIGERADOR", "nombre": "CONSERVADOR DE COCINA", "nro": "EQUIPO 4", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 99, "tiendaId": 17, "tipo": "REFRIGERADOR", "nombre": "CONSERVADORA", "nro": "EQUIPO 5", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 100, "tiendaId": 17, "tipo": "CONGELADOR", "nombre": "EQUIPO CONGELACIÓN", "nro": "EQUIPO 6", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 101, "tiendaId": 17, "tipo": "REFRIGERADOR", "nombre": "EQUIPO DE DESCONGELACIÓN", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 102, "tiendaId": 17, "tipo": "REFRIGERADOR", "nombre": "TOPPING DE PARRILLA", "nro": "EQUIPO 8", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 103, "tiendaId": 17, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "2 POZAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 104, "tiendaId": 17, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA DE HORNILLAS", "nro": "EQUIPO 10", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "2 HORNILLAS", "puertas": "", "serie": "2026 -10", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 105, "tiendaId": 17, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 11", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -11", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 106, "tiendaId": 17, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 12", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -12", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 107, "tiendaId": 17, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 13", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -13", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 108, "tiendaId": 19, "tipo": "CONGELADOR", "nombre": "CONGELADOR", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 109, "tiendaId": 19, "tipo": "CONGELADOR", "nombre": "CONGELADOR DE PAPAS", "nro": "EQUIPO 2", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 110, "tiendaId": 19, "tipo": "REFRIGERADOR", "nombre": "CONSERVADOR DE COCINA", "nro": "EQUIPO 3", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 111, "tiendaId": 19, "tipo": "REFRIGERADOR", "nombre": "MESA DE REFRIGERACION GASEOSA", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "4", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 112, "tiendaId": 19, "tipo": "REFRIGERADOR", "nombre": "MESA DE TRABAJO DESCONGELACIÓN", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 113, "tiendaId": 19, "tipo": "CONGELADOR", "nombre": "CONGELADOR DE CARNE", "nro": "EQUIPO 6", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 114, "tiendaId": 19, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 7", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 115, "tiendaId": 19, "tipo": "REFRIGERADOR", "nombre": "MESA DE PARRILLA", "nro": "EQUIPO 8", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 116, "tiendaId": 19, "tipo": "REFRIGERADOR", "nombre": "TOPPING DE ENSALADAS", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "1", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 117, "tiendaId": 19, "tipo": "REFRIGERADOR", "nombre": "TOPPING DE PARRILLA", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -10", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 118, "tiendaId": 19, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 11", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "BANDEJA", "puertas": "2", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 119, "tiendaId": 19, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA DE HORNILLAS", "nro": "EQUIPO 12", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "HORNILLAS", "puertas": "3", "serie": "2026 -12", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 120, "tiendaId": 19, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 13", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -13", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 121, "tiendaId": 19, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 14", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -14", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 122, "tiendaId": 19, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 15", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -15", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 123, "tiendaId": 21, "tipo": "CONGELADOR", "nombre": "CONGELADOR DE CARNES", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 124, "tiendaId": 21, "tipo": "CONGELADOR", "nombre": "CONGELADOR DE PAPAS", "nro": "EQUIPO 2", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "1", "serie": "2026 -02", "marca": "TURBO AIR", "modelo": "INTERNACIONAL", "voltaje": "220"}, {"id": 125, "tiendaId": 21, "tipo": "REFRIGERADOR", "nombre": "TOPPING DE ENSALADAS", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 126, "tiendaId": 21, "tipo": "REFRIGERADOR", "nombre": "MESA DE TRABAJO DE PARRILLA", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 127, "tiendaId": 21, "tipo": "REFRIGERADOR", "nombre": "TOPPING DE PARRILLA", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 128, "tiendaId": 21, "tipo": "REFRIGERADOR", "nombre": "COCINA", "nro": "EQUIPO 6", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 129, "tiendaId": 21, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 7", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 130, "tiendaId": 21, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 8", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "RECTANGULOS", "puertas": "2", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 131, "tiendaId": 21, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA", "nro": "EQUIPO 9", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "HORNILLAS", "puertas": "3", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 132, "tiendaId": 21, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 10", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 133, "tiendaId": 21, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 11", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 134, "tiendaId": 21, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 12", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -12", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 135, "tiendaId": 22, "tipo": "CONGELADOR", "nombre": "CONGELADOR", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 136, "tiendaId": 22, "tipo": "REFRIGERADOR", "nombre": "CONSERVADOR DE COCINA", "nro": "EQUIPO 2", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 137, "tiendaId": 22, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 138, "tiendaId": 22, "tipo": "REFRIGERADOR", "nombre": "TOPPING DE PARRILLA", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 139, "tiendaId": 22, "tipo": "REFRIGERADOR", "nombre": "EQUIPO DESCONGELACIÓN", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 140, "tiendaId": 22, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "INDUCCIÓN", "puertas": "", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 141, "tiendaId": 22, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA DE HORNILLAS", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "3 QUEMADORES", "puertas": "", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 142, "tiendaId": 22, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -08", "marca": "HUEI LIH", "modelo": "RH90", "voltaje": "-"}, {"id": 143, "tiendaId": 22, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 144, "tiendaId": 22, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 145, "tiendaId": 23, "tipo": "CONGELADOR", "nombre": "CONGELADOR", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 146, "tiendaId": 23, "tipo": "REFRIGERADOR", "nombre": "CONSERVACIÓN DE BEBIDAS", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 147, "tiendaId": 23, "tipo": "CONSERVADOR", "nombre": "TOPPING DE PARRILLA", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 148, "tiendaId": 23, "tipo": "REFRIGERADOR", "nombre": "EQUIPO 1 REFRIGERACIÓN", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "1", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 149, "tiendaId": 23, "tipo": "REFRIGERADOR", "nombre": "EQUIPO DE DESCONGELACIÓN", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 150, "tiendaId": 23, "tipo": "REFRIGERADOR", "nombre": "CONSERVADORA", "nro": "EQUIPO 6", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 151, "tiendaId": 23, "tipo": "REFRIGERADOR", "nombre": "VERTICAL DE COCINA", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 152, "tiendaId": 23, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 8", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "2 HORNILLAS", "puertas": "", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 153, "tiendaId": 23, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA DE HORNILLAS", "nro": "EQUIPO 9", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "3 HORNILLAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 154, "tiendaId": 23, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 10", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 155, "tiendaId": 23, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 11", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 156, "tiendaId": 23, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 12", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -12", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 157, "tiendaId": 26, "tipo": "CONGELADOR", "nombre": "CONGELADOR", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 158, "tiendaId": 26, "tipo": "REFRIGERADOR", "nombre": "CONSERVADORA DE COCINA", "nro": "EQUIPO 2", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 159, "tiendaId": 26, "tipo": "REFRIGERADOR", "nombre": "CONSERVADORA DE GASEOSAS", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "3", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 160, "tiendaId": 26, "tipo": "REFRIGERADOR", "nombre": "EQUIPO DESCONGELACIÓN", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 161, "tiendaId": 26, "tipo": "REFRIGERADOR", "nombre": "TOPPING DE PARRILLA", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 162, "tiendaId": 26, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "2 POZAS", "puertas": "", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 163, "tiendaId": 26, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA DE HORNILLAS", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "3 HORNILLAS", "puertas": "", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 164, "tiendaId": 26, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -08", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 165, "tiendaId": 26, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 166, "tiendaId": 26, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 167, "tiendaId": 27, "tipo": "CONGELADOR", "nombre": "CONGELADOR DE CARNES", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 168, "tiendaId": 27, "tipo": "CONGELADOR", "nombre": "CONGELADOR DE PAPAS", "nro": "EQUIPO 2", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "1", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 169, "tiendaId": 27, "tipo": "CONSERVADOR", "nombre": "CONSERVADOR DE GASEOSAS", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 170, "tiendaId": 27, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 171, "tiendaId": 27, "tipo": "REFRIGERADOR", "nombre": "TOPPING PARRILLA", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 172, "tiendaId": 27, "tipo": "REFRIGERADOR", "nombre": "VERTICAL DESCONGELACIÓN", "nro": "EQUIPO 6", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 173, "tiendaId": 27, "tipo": "REFRIGERADOR", "nombre": "VERTICAL DE COCINA", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 174, "tiendaId": 27, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 8", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "2 POZAS", "puertas": "", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 175, "tiendaId": 27, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA DE HORNILLAS", "nro": "EQUIPO 9", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "2 HORNILLAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 176, "tiendaId": 27, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 10", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 177, "tiendaId": 27, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 11", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 178, "tiendaId": 27, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 12", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -12", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 179, "tiendaId": 28, "tipo": "CONGELADOR", "nombre": "CONGELADOR", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 180, "tiendaId": 28, "tipo": "CONGELADOR", "nombre": "CONGELADOR P1", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 181, "tiendaId": 28, "tipo": "CONGELADOR", "nombre": "CONGELADOR P2", "nro": "EQUIPO 3", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 182, "tiendaId": 28, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 183, "tiendaId": 28, "tipo": "REFRIGERADOR", "nombre": "TOPPING DE ENSALADAS", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 184, "tiendaId": 28, "tipo": "REFRIGERADOR", "nombre": "VERTICAL DE COCINA", "nro": "EQUIPO 6", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 185, "tiendaId": 28, "tipo": "REFRIGERADOR", "nombre": "DESCONGELACIÓN", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 186, "tiendaId": 28, "tipo": "REFRIGERADOR", "nombre": "REFRIGERACIÓN", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 187, "tiendaId": 28, "tipo": "REFRIGERADOR", "nombre": "TOPINERA", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 188, "tiendaId": 28, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "3 POZAS", "puertas": "", "serie": "2026 -10", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 189, "tiendaId": 28, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA DE HORNILLAS", "nro": "EQUIPO 11", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "3 HORNILLAS", "puertas": "", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 190, "tiendaId": 28, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 12", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -12", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 191, "tiendaId": 28, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 13", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -13", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 192, "tiendaId": 28, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 14", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -14", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 193, "tiendaId": 29, "tipo": "CONGELADOR", "nombre": "CONGELADOR", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "1", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 194, "tiendaId": 29, "tipo": "CONGELADOR", "nombre": "CONGELADOR P1", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 195, "tiendaId": 29, "tipo": "CONGELADOR", "nombre": "CONGELADOR", "nro": "EQUIPO 3", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 196, "tiendaId": 29, "tipo": "REFRIGERADOR", "nombre": "CONSERVADORA REFRIGERACIÓN", "nro": "EQUIPO 4", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "1", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 197, "tiendaId": 29, "tipo": "REFRIGERADOR", "nombre": "CONSERVADORA", "nro": "EQUIPO 5", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 198, "tiendaId": 29, "tipo": "REFRIGERADOR", "nombre": "MESA DE DESCONGEALCIÓN", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 199, "tiendaId": 29, "tipo": "REFRIGERADOR", "nombre": "TOPPING DE ENSALADAS", "nro": "EQUIPO 7", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 200, "tiendaId": 29, "tipo": "REFRIGERADOR", "nombre": "VERTICAL DESCONGELACIÓN", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 201, "tiendaId": 29, "tipo": "REFRIGERADOR", "nombre": "VERTICAL DE COCINA", "nro": "EQUIPO 9", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "1", "serie": "2026 -09", "marca": "ASBER", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 202, "tiendaId": 29, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TAVOLA CALIENTE", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "3 POZAS", "puertas": "", "serie": "2026 -10", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 203, "tiendaId": 29, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA DE HORNILLAS", "nro": "EQUIPO 11", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "2 HORNILLAS", "puertas": "", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 204, "tiendaId": 29, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 12", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -12", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 205, "tiendaId": 29, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 13", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -13", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 206, "tiendaId": 29, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 14", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -14", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 207, "tiendaId": 30, "tipo": "CONGELADOR", "nombre": "CONGELADOR DE CARNE", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 208, "tiendaId": 30, "tipo": "REFRIGERADOR", "nombre": "CONSERVADOR DE GASEOSAS", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 209, "tiendaId": 30, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL ENSALADA", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 210, "tiendaId": 30, "tipo": "REFRIGERADOR", "nombre": "MESA DE TRABAJO 1", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 211, "tiendaId": 30, "tipo": "REFRIGERADOR", "nombre": "MESA DE TRABAJO 2", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 212, "tiendaId": 30, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR DE COCINA", "nro": "EQUIPO 6", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 213, "tiendaId": 30, "tipo": "REFRIGERADOR", "nombre": "TOPPING PARRILLA", "nro": "EQUIPO 7", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 214, "tiendaId": 30, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 8", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "BANDEJA", "puertas": "2", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 215, "tiendaId": 30, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA", "nro": "EQUIPO 9", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "HORNILLAS", "puertas": "2", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 216, "tiendaId": 30, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 11", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 217, "tiendaId": 30, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 12", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 218, "tiendaId": 30, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 13", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -12", "marca": "FRYMASTER", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 219, "tiendaId": 13, "tipo": "REFRIGERADOR", "nombre": "CONGELADOR DE CARNES", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 220, "tiendaId": 13, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 221, "tiendaId": 13, "tipo": "REFRIGERADOR", "nombre": "MESA DE TRABAJO 1 PARRILLA", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 222, "tiendaId": 13, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR DE COCINA", "nro": "EQUIPO 4", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 223, "tiendaId": 13, "tipo": "REFRIGERADOR", "nombre": "TOPPING PARRILLA", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 224, "tiendaId": 13, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "BANDEJA", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 225, "tiendaId": 13, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "HORNILLAS", "puertas": "3", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 226, "tiendaId": 13, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -08", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 227, "tiendaId": 13, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 228, "tiendaId": 13, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "ELECTRICA", "puertas": "2", "serie": "2026 -10", "marca": "TECNOFOOD", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 229, "tiendaId": 13, "tipo": "REFRIGERADOR", "nombre": "TOPING DE ENSALDA", "nro": "EQUIPO 11", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 230, "tiendaId": 15, "tipo": "REFRIGERADOR", "nombre": "CONGELADOR", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 231, "tiendaId": 15, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR", "nro": "EQUIPO 2", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 232, "tiendaId": 15, "tipo": "REFRIGERADOR", "nombre": "TOPPING PARRILLA", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 233, "tiendaId": 15, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "2 pozas", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 234, "tiendaId": 15, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA", "nro": "EQUIPO 5", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "2 hornillas", "puertas": "3", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 235, "tiendaId": 15, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 6", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -06", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 236, "tiendaId": 15, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 7", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 237, "tiendaId": 15, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 8", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -08", "marca": "TECNiFOOD", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 238, "tiendaId": 15, "tipo": "CONGELADOR", "nombre": "CONGELADOR", "nro": "EQUIPO 9", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 239, "tiendaId": 15, "tipo": "REFRIGERACIÓN", "nombre": "MESA DE PARRILLA", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -10", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 240, "tiendaId": 15, "tipo": "REFRIGERACIÓN", "nombre": "MESA CENTRAL", "nro": "EQUIPO 11", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 241, "tiendaId": 15, "tipo": "REFRIGERACIÓN", "nombre": "DESCONGELACIÓN", "nro": "EQUIPO 12", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "vertical", "puertas": "2", "serie": "2026 -12", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 242, "tiendaId": 15, "tipo": "CONSERVADOR", "nombre": "CONSERVADORA DE REFRIGERACIÓN 1", "nro": "EQUIPO 13", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -13", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 243, "tiendaId": 15, "tipo": "CONSERVADOR", "nombre": "CONSERVADORA DE REFRIGERACIÓN 2", "nro": "EQUIPO 14", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -14", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 244, "tiendaId": 15, "tipo": "CONGELADOR", "nombre": "CONGELADOR DE CARNE", "nro": "EQUIPO 15", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -15", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 245, "tiendaId": 16, "tipo": "REFRIGERADOR", "nombre": "CONGELADOR DE CARNES", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 246, "tiendaId": 16, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 247, "tiendaId": 16, "tipo": "REFRIGERADOR", "nombre": "MESA DE TRABAJO 1 PARRILLA", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 248, "tiendaId": 16, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR DE COCINA", "nro": "EQUIPO 4", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 249, "tiendaId": 16, "tipo": "REFRIGERADOR", "nombre": "TOPPING PARRILLA", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 250, "tiendaId": 16, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "BANDEJA", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 251, "tiendaId": 16, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "HORNILLAS", "puertas": "2", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 252, "tiendaId": 16, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -08", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 253, "tiendaId": 16, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 254, "tiendaId": 16, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "TECNOFOOD", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 255, "tiendaId": 16, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR", "nro": "EQUIPO 11", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 256, "tiendaId": 16, "tipo": "REFRIGERADOR", "nombre": "TOPING DE ENSALDA", "nro": "EQUIPO 12", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "", "serie": "2026 -12", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 257, "tiendaId": 16, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADO GASEOSA", "nro": "EQUIPO 13", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "2", "puertas": "2", "serie": "2026 -13", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 258, "tiendaId": 7, "tipo": "REFRIGERADOR", "nombre": "CONGELADOR DE CARNES", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 259, "tiendaId": 7, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 260, "tiendaId": 7, "tipo": "REFRIGERADOR", "nombre": "MESA DE TRABAJO 1 PARRILLA", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 261, "tiendaId": 7, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR DE COCINA", "nro": "EQUIPO 4", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 262, "tiendaId": 7, "tipo": "REFRIGERADOR", "nombre": "TOPPING PARRILLA", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 263, "tiendaId": 7, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "BANDEJA", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 264, "tiendaId": 7, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "HORNILLAS", "puertas": "3", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 265, "tiendaId": 7, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -08", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 266, "tiendaId": 7, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 267, "tiendaId": 7, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "TECNOFOOD", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 268, "tiendaId": 7, "tipo": "REFRIGERADOR", "nombre": "TOPING DE ENSALDA", "nro": "EQUIPO 11", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 269, "tiendaId": 9, "tipo": "REFRIGERADOR", "nombre": "CONGELADOR DE CARNES", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 270, "tiendaId": 9, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 271, "tiendaId": 9, "tipo": "REFRIGERADOR", "nombre": "MESA DE TRABAJO 1 PARRILLA", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 272, "tiendaId": 9, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR DE COCINA", "nro": "EQUIPO 4", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 273, "tiendaId": 9, "tipo": "REFRIGERADOR", "nombre": "TOPPING PARRILLA", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 274, "tiendaId": 9, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "BANDEJA", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 275, "tiendaId": 9, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "HORNILLAS", "puertas": "3", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 276, "tiendaId": 9, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -08", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 277, "tiendaId": 9, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 278, "tiendaId": 9, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "TECNOFOOD", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 279, "tiendaId": 9, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR", "nro": "EQUIPO 11", "ubicacion": "", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "3", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 280, "tiendaId": 9, "tipo": "REFRIGERADOR", "nombre": "CONGELADOR DE CARNES", "nro": "EQUIPO 12", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -12", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 281, "tiendaId": 9, "tipo": "REFRIGERADOR", "nombre": "TOPING DE ENSALDA", "nro": "EQUIPO 13", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -13", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 282, "tiendaId": 10, "tipo": "CONGELADOR", "nombre": "CONGELADOR DE CARNE", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 283, "tiendaId": 10, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL  ENSALADAS", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 284, "tiendaId": 10, "tipo": "REFRIGERADOR", "nombre": "MESA DE TRABAJO 1 PARRILLA", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 285, "tiendaId": 10, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR DE COCINA", "nro": "EQUIPO 6", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 286, "tiendaId": 10, "tipo": "REFRIGERADOR", "nombre": "TOPPING PARRILLA", "nro": "EQUIPO 7", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 287, "tiendaId": 10, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 8", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "BANDEJA", "puertas": "2", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 288, "tiendaId": 10, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA", "nro": "EQUIPO 9", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "HORNILLAS", "puertas": "3", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 289, "tiendaId": 10, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 11", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 290, "tiendaId": 10, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 12", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 291, "tiendaId": 10, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 13", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -12", "marca": "TECNOFOOD", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 292, "tiendaId": 12, "tipo": "REFRIGERADOR", "nombre": "CONGELADOR DE CARNES", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 293, "tiendaId": 12, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 294, "tiendaId": 12, "tipo": "REFRIGERADOR", "nombre": "refrigeración", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 295, "tiendaId": 12, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR DE COCINA", "nro": "EQUIPO 4", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 296, "tiendaId": 12, "tipo": "REFRIGERADOR", "nombre": "TOPPING PARRILLA", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 297, "tiendaId": 12, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "2 pozas", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 298, "tiendaId": 12, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "3 hornillas", "puertas": "3", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 299, "tiendaId": 12, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -08", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 300, "tiendaId": 12, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 301, "tiendaId": 12, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "surco", "modelo": "nacional", "voltaje": "-"}, {"id": 302, "tiendaId": 12, "tipo": "REFRIGERADOR", "nombre": "TOPING DE ENSALDA", "nro": "EQUIPO 11", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 303, "tiendaId": 12, "tipo": "CONGELADOR", "nombre": "CONGELADOR", "nro": "EQUIPO 12", "ubicacion": "", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "1", "serie": "2026 -12", "marca": "mizar", "modelo": "NACIONAL", "voltaje": ""}, {"id": 304, "tiendaId": 12, "tipo": "CONGELADOR", "nombre": "CONGELADOR 2", "nro": "EQUIPO 13", "ubicacion": "", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "1", "serie": "2026 -13", "marca": "mizar", "modelo": "NACIONAL", "voltaje": ""}, {"id": 305, "tiendaId": 20, "tipo": "REFRIGERADOR", "nombre": "CONGELADOR DE CARNES", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 306, "tiendaId": 20, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 307, "tiendaId": 20, "tipo": "REFRIGERADOR", "nombre": "MESA DE TRABAJO 1 PARRILLA", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 308, "tiendaId": 20, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR DE COCINA", "nro": "EQUIPO 4", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 309, "tiendaId": 20, "tipo": "REFRIGERADOR", "nombre": "TOPPING PARRILLA", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "frionox", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 310, "tiendaId": 20, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "1 poza", "puertas": "", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 311, "tiendaId": 20, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "3 hornillas", "puertas": "3", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 312, "tiendaId": 20, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -08", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 313, "tiendaId": 20, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 314, "tiendaId": 20, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "surco", "modelo": "nacional", "voltaje": "-"}, {"id": 315, "tiendaId": 20, "tipo": "CONGELADORA", "nombre": "CONGELADORA 1", "nro": "EQUIPO 11", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 316, "tiendaId": 20, "tipo": "CONGELADORA", "nombre": "CONGELADORA 2", "nro": "EQUIPO 12", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -12", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 317, "tiendaId": 20, "tipo": "REFRIGERADOR", "nombre": "DESCONGELACIÓN", "nro": "EQUIPO 13", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -13", "marca": "frionox", "modelo": "NACIONAL", "voltaje": ""}, {"id": 318, "tiendaId": 20, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 14", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -14", "marca": "frionox", "modelo": "NACIONAL", "voltaje": ""}, {"id": 319, "tiendaId": 20, "tipo": "REFRIGERADOR", "nombre": "TOPING DE ENSALDA", "nro": "EQUIPO 15", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -15", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 320, "tiendaId": 18, "tipo": "REFRIGERADOR", "nombre": "CONGELADOR DE CARNES", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 321, "tiendaId": 18, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 322, "tiendaId": 18, "tipo": "REFRIGERADOR", "nombre": "MESA DE TRABAJO 1 PARRILLA", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 323, "tiendaId": 18, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR DE COCINA", "nro": "EQUIPO 4", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 324, "tiendaId": 18, "tipo": "REFRIGERADOR", "nombre": "TOPPING PARRILLA", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 325, "tiendaId": 18, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "BANDEJA", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 326, "tiendaId": 18, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "HORNILLAS", "puertas": "3", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 327, "tiendaId": 18, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -08", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 328, "tiendaId": 18, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 329, "tiendaId": 18, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "TECNOFOOD", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 330, "tiendaId": 18, "tipo": "CONGELADOR", "nombre": "CONGELADOR DE CARNE", "nro": "EQUIPO 11", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 331, "tiendaId": 18, "tipo": "REFRIGERADOR", "nombre": "TOPING DE ENSALDA", "nro": "EQUIPO 12", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -12", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 332, "tiendaId": 24, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 1", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 333, "tiendaId": 24, "tipo": "REFRIGERADOR", "nombre": "MESA DE TRABAJO 1 PARRILLA", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 334, "tiendaId": 24, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR DE COCINA", "nro": "EQUIPO 3", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 335, "tiendaId": 24, "tipo": "REFRIGERADOR", "nombre": "TOPPING PARRILLA", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 336, "tiendaId": 24, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "BANDEJA", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 337, "tiendaId": 24, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA", "nro": "EQUIPO 6", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "HORNILLAS", "puertas": "3", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 338, "tiendaId": 24, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -07", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 339, "tiendaId": 24, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 8", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -08", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 340, "tiendaId": 24, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -09", "marca": "TECNOFOOD", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 341, "tiendaId": 24, "tipo": "REFRIGERADOR", "nombre": "TOPING DE ENSALDA", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -10", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 342, "tiendaId": 25, "tipo": "REFRIGERADOR", "nombre": "CONGELADOR DE CARNES", "nro": "EQUIPO 1", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "4", "serie": "2026 -01", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 343, "tiendaId": 25, "tipo": "REFRIGERADOR", "nombre": "MESA CENTRAL", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -02", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 344, "tiendaId": 25, "tipo": "REFRIGERADOR", "nombre": "MESA DE TRABAJO 1 PARRILLA", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -03", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 345, "tiendaId": 25, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR DE COCINA", "nro": "EQUIPO 4", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "2", "serie": "2026 -04", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 346, "tiendaId": 25, "tipo": "REFRIGERADOR", "nombre": "TOPPING PARRILLA", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "2", "serie": "2026 -05", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 347, "tiendaId": 25, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "TÁVOLA CALIENTE", "nro": "EQUIPO 6", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "BANDEJA", "puertas": "2", "serie": "2026 -06", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 348, "tiendaId": 25, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "HORNILLAS", "puertas": "3", "serie": "2026 -07", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "-"}, {"id": 349, "tiendaId": 25, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -08", "marca": "HUEI LIH", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 350, "tiendaId": 25, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -09", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": "220"}, {"id": 351, "tiendaId": 25, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DEAN", "nro": "EQUIPO 10", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "A GAS", "puertas": "", "serie": "2026 -10", "marca": "TECNOFOOD", "modelo": "INTERNACIONAL", "voltaje": "-"}, {"id": 352, "tiendaId": 25, "tipo": "REFRIGERADOR", "nombre": "REFRIGERADOR DE GASEOSA", "nro": "EQUIPO 11", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "", "serie": "2026 -11", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 353, "tiendaId": 25, "tipo": "REFRIGERADOR", "nombre": "TOPING DE ENSALDA", "nro": "EQUIPO 12", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "HORIZONTAL", "puertas": "", "serie": "2026 -12", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 354, "tiendaId": 25, "tipo": "REFRIGERADOR", "nombre": "CONGELADOR DE CARNES", "nro": "EQUIPO 13", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VEETICAL", "puertas": "", "serie": "2026 -13", "marca": "MAQUITERSA", "modelo": "NACIONAL", "voltaje": ""}, {"id": 355, "tiendaId": 8, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "PARRILLA", "nro": "EQUIPO 1", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "", "puertas": "", "serie": "", "marca": "", "modelo": "", "voltaje": ""}, {"id": 356, "tiendaId": 8, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "FREIDORA DE COMPLEMENTOS", "nro": "EQUIPO 2", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "", "puertas": "", "serie": "", "marca": "", "modelo": "", "voltaje": ""}, {"id": 357, "tiendaId": 8, "tipo": "REFRIGERADORA", "nombre": "REFRIGERADORA", "nro": "EQUIPO 3", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "", "serie": "", "marca": "", "modelo": "", "voltaje": ""}, {"id": 358, "tiendaId": 8, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "MESA CENTRAL CALIENTE", "nro": "EQUIPO 4", "ubicacion": "COUNTER", "frio_caliente": "CALIENTE", "caracteristica": "", "puertas": "", "serie": "", "marca": "", "modelo": "", "voltaje": ""}, {"id": 359, "tiendaId": 8, "tipo": "REFRIGERADORA", "nombre": "MESA FRIA DE CONSERVACION", "nro": "EQUIPO 5", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "", "puertas": "2", "serie": "", "marca": "", "modelo": "", "voltaje": ""}, {"id": 360, "tiendaId": 8, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "COCINA", "nro": "EQUIPO 6", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "", "puertas": "2", "serie": "", "marca": "", "modelo": "", "voltaje": ""}, {"id": 361, "tiendaId": 8, "tipo": "EQUIPOS DE COCCIÓN", "nombre": "OLLA ARROCERA", "nro": "EQUIPO 7", "ubicacion": "PRODUCCION", "frio_caliente": "CALIENTE", "caracteristica": "", "puertas": "", "serie": "", "marca": "", "modelo": "", "voltaje": ""}, {"id": 362, "tiendaId": 8, "tipo": "CONGELADORA", "nombre": "CONGELACIÓN", "nro": "EQUIPO 8", "ubicacion": "PRODUCCION", "frio_caliente": "FRIO", "caracteristica": "VERTICAL", "puertas": "", "serie": "", "marca": "", "modelo": "", "voltaje": ""}, {"id": 363, "tiendaId": 8, "tipo": "REFRIGERADOR", "nombre": "MESA FRIA DE CONSERVACIÓN", "nro": "EQUIPO 9", "ubicacion": "COUNTER", "frio_caliente": "FRIO", "caracteristica": "", "puertas": "", "serie": "", "marca": "", "modelo": "", "voltaje": ""}];
+
+var tiendas = TIENDAS_DATA.slice();
+var equipos = EQUIPOS_DATA.slice();
+var asignaciones = [];
+var tecnicos = [
+  {id:1,nombre:'WILLY',tipo:'tecnico',region:'Lima'},
+  {id:2,nombre:'YERSON',tipo:'tecnico',region:'Lima'},
+  {id:3,nombre:'JOSE',tipo:'tecnico',region:'Lima'},
+  {id:4,nombre:'JESUS',tipo:'tecnico',region:'Lima'},
+  {id:5,nombre:'JHON',tipo:'tecnico',region:'Lima'},
+  {id:6,nombre:'Frío Norte SAC',tipo:'proveedor',region:'Norte (Trujillo, Chiclayo, Piura)'},
+  {id:7,nombre:'Frío Centro SAC',tipo:'proveedor',region:'Centro (Huancayo)'},
+  {id:8,nombre:'Frío Sur SAC',tipo:'proveedor',region:'Sur (Arequipa, Cusco, Ica, Juliaca)'}
+];
+var nextAid=1, nextTecId=9, curEjId=null;
+
+var MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+var TRIM_MESES={1:[0,1,2],2:[3,4,5],3:[6,7,8],4:[9,10,11]};
+
+// Init year
+var hoy=new Date();
+var ysel=document.getElementById('selYear');
+for(var y=2024;y<=2030;y++){var o=document.createElement('option');o.value=y;o.textContent=y;if(y===hoy.getFullYear())o.selected=true;ysel.appendChild(o);}
+var curTrimInit=Math.ceil((hoy.getMonth()+1)/3);
+document.getElementById('selTrim').value=curTrimInit;
+setTrimBtns(curTrimInit);
+
+function getCurYear(){return parseInt(document.getElementById('selYear').value);}
+function getCurTrim(){return parseInt(document.getElementById('selTrim').value);}
+function getTienda(id){return tiendas.find(function(t){return t.id===id;});}
+function getEqs(tid){return equipos.filter(function(e){return e.tiendaId===tid;});}
+function getAsign(tid,trim,year){return asignaciones.find(function(a){return a.tiendaId===tid&&a.year===year&&TRIM_MESES[trim]&&(a.mesIni<=TRIM_MESES[trim][2]&&a.mesFin>=TRIM_MESES[trim][0]);});}
+function getAsignYear(tid,year){return asignaciones.find(function(a){return a.tiendaId===tid&&a.year===year;});}
+function asignInMonth(tid,month,year){return asignaciones.find(function(a){return a.tiendaId===tid&&a.year===year&&a.mesIni<=month&&a.mesFin>=month;});}
+function calcProg(a){if(!a||!a.eqAsignados||!a.eqAsignados.length)return 0;return Math.round(a.eqRevisados.length/a.eqAsignados.length*100);}
+function today(){return new Date().toISOString().split('T')[0];}
+function fmtDate(d){if(!d)return '—';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function calcNextMP(fe){if(!fe)return null;var d=new Date(fe+'T00:00:00');d.setMonth(d.getMonth()+3);return d.toISOString().split('T')[0];}
+
+function estadoBadge(st){
+  if(st==='completado')return '<span class="badge b-green">✅ Completado</span>';
+  if(st==='parcial')return '<span class="badge b-amber">🔄 Progreso</span>';
+  return '<span class="badge b-red">⏳ Pendiente</span>';
+}
+
+function updateProgress(){
+  var trim=getCurTrim(),year=getCurYear();
+  var lima=tiendas.filter(function(t){return t.zona==='LIMA';});
+  var prov=tiendas.filter(function(t){return t.zona==='PROVINCIA';});
+  function pct(list){var d=list.filter(function(t){var a=getAsignYear(t.id,year);return a&&a.estado==='completado';}).length;return list.length?Math.round(d/list.length*100):0;}
+  var pl=pct(lima),pp=pct(prov),pt=pct(tiendas);
+  document.getElementById('pgLima').style.width=pl+'%';document.getElementById('pgLimaPct').textContent=pl+'%';
+  document.getElementById('pgProv').style.width=pp+'%';document.getElementById('pgProvPct').textContent=pp+'%';
+  document.getElementById('pgTotal').style.width=pt+'%';document.getElementById('pgTotalPct').textContent=pt+'%';
+  var pend=tiendas.filter(function(t){var a=getAsignYear(t.id,year);return !a||a.estado==='pendiente';}).length;
+  document.getElementById('nbPend').textContent=pend;
+  // Sidebar summary
+  var sb=document.getElementById('sbResumen');
+  var done=tiendas.filter(function(t){var a=getAsignYear(t.id,year);return a&&a.estado==='completado';}).length;
+  var par=tiendas.filter(function(t){var a=getAsignYear(t.id,year);return a&&a.estado==='parcial';}).length;
+  sb.innerHTML='<div style="display:flex;justify-content:space-between"><span>✅ Completados</span><strong style="color:var(--green)">'+done+'</strong></div>'
+    +'<div style="display:flex;justify-content:space-between"><span>🔄 En progreso</span><strong style="color:var(--amber)">'+par+'</strong></div>'
+    +'<div style="display:flex;justify-content:space-between"><span>⏳ Sin programar</span><strong style="color:var(--red)">'+pend+'</strong></div>';
+}
+
+function setTrim(t){document.getElementById('selTrim').value=t;setTrimBtns(t);refreshAll();}
+function onTrimChange(){setTrimBtns(getCurTrim());refreshAll();}
+function setTrimBtns(t){for(var i=1;i<=4;i++)document.getElementById('tb'+i).classList.toggle('active',i===t);}
+
+function navTo(tab,el){
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  el.classList.add('active');
+  refreshAll();
+}
+
+function populateSelects(){
+  ['aTienda','fEjTienda'].forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    var cur=el.value;
+    el.innerHTML='<option value="">'+( id==='aTienda'?'— Selecciona —':'Todas las tiendas')+'</option>';
+    tiendas.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.textContent=(t.zona==='LIMA'?'📍 ':'🗺 ')+t.nombre;el.appendChild(o);});
+    if(cur)el.value=cur;
+  });
+  ['aTecnico','fEjTech','cgTech'].forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    var cur=el.value;
+    el.innerHTML='<option value="">'+( id==='aTecnico'?'— Selecciona —':'Todos')+'</option>';
+    tecnicos.forEach(function(t){var o=document.createElement('option');o.value=t.nombre;o.textContent=(t.tipo==='tecnico'?'👷 ':'🏢 ')+t.nombre;el.appendChild(o);});
+    if(cur)el.value=cur;
+  });
+}
+
+function refreshAll(){
+  updateProgress();populateSelects();
+  renderDashboard();renderCronograma();renderTiendas();renderEjecucion();renderTecnicos();
+}
+
+// ── DASHBOARD ──
+function renderDashboard(){
+  var trim=getCurTrim(),year=getCurYear();
+  var done=tiendas.filter(function(t){var a=getAsignYear(t.id,year);return a&&a.estado==='completado';}).length;
+  var par=tiendas.filter(function(t){var a=getAsignYear(t.id,year);return a&&a.estado==='parcial';}).length;
+  var pend=tiendas.filter(function(t){var a=getAsignYear(t.id,year);return !a||a.estado==='pendiente';}).length;
+  document.getElementById('kDone').textContent=done;
+  document.getElementById('kParcial').textContent=par;
+  document.getElementById('kPend').textContent=pend;
+  function rTbl(id,list){
+    var b=document.querySelector('#'+id+' tbody');
+    b.innerHTML=list.map(function(t){
+      var a=getAsignYear(t.id,year),pct=a?calcProg(a):0;
+      var eqs=getEqs(t.id);
+      return '<tr><td style="font-weight:700;font-size:11px">'+t.nombre.replace('OG ','')+'</td>'
+        +'<td style="text-align:center;font-size:10px;color:var(--muted)">'+eqs.length+' eq.</td>'
+        +'<td>'+(a?'<span class="badge b-gray" style="font-size:9px">'+a.tecnico+'</span>':'<span style="color:var(--muted);font-size:10px">—</span>')+'</td>'
+        +'<td>'+estadoBadge(a?a.estado:'pendiente')+'</td>'
+        +'<td><div class="prog-mini"><div class="prog-mini-fill" style="width:'+pct+'%;background:'+(pct===100?'var(--green)':pct>0?'var(--amber)':'var(--border)')+'"></div></div></td>'
+        +'</tr>';
+    }).join('');
+  }
+  rTbl('dashLima',tiendas.filter(function(t){return t.zona==='LIMA';}));
+  rTbl('dashProv',tiendas.filter(function(t){return t.zona==='PROVINCIA';}));
+  // Tech load
+  var byTech={};
+  asignaciones.filter(function(a){return a.year===year;}).forEach(function(a){
+    if(!byTech[a.tecnico])byTech[a.tecnico]={total:0,done:0,par:0};
+    byTech[a.tecnico].total++;
+    if(a.estado==='completado')byTech[a.tecnico].done++;
+    else if(a.estado==='parcial')byTech[a.tecnico].par++;
+  });
+  var tb=document.querySelector('#dashTech tbody');
+  tb.innerHTML='<tr><th style="background:var(--surface2)">TÉCNICO/PROVEEDOR</th><th style="background:var(--surface2);text-align:center">TIENDAS</th><th style="background:var(--surface2);text-align:center">COMPLETADAS</th><th style="background:var(--surface2);text-align:center">EN PROGRESO</th><th style="background:var(--surface2)">AVANCE</th></tr>'
+    +(Object.keys(byTech).length?Object.entries(byTech).sort(function(a,b){return b[1].total-a[1].total;}).map(function(e){
+      var pct=e[1].total?Math.round(e[1].done/e[1].total*100):0;
+      var tc=tecnicos.find(function(t){return t.nombre===e[0];});
+      return '<tr><td><span class="badge '+(tc&&tc.tipo==='proveedor'?'b-purple':'b-teal')+'">'+e[0]+'</span></td>'
+        +'<td style="text-align:center;font-weight:700">'+e[1].total+'</td>'
+        +'<td style="text-align:center;color:var(--green);font-weight:700">'+e[1].done+'</td>'
+        +'<td style="text-align:center;color:var(--amber);font-weight:700">'+e[1].par+'</td>'
+        +'<td><div style="display:flex;align-items:center;gap:8px"><div class="prog-bar" style="width:100px"><div class="prog-fill" style="width:'+pct+'%"></div></div><span style="font-family:DM Mono,monospace;font-size:11px;font-weight:600;color:var(--teal)">'+pct+'%</span></div></td></tr>';
+    }).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:18px">Sin asignaciones en este trimestre. Usa "+ Asignar MP" para comenzar.</td></tr>');
+}
+
+// ── CRONOGRAMA ──
+function renderCronograma(){
+  var zona=document.getElementById('cgZona').value;
+  var tech=document.getElementById('cgTech').value;
+  var year=getCurYear();
+  var lista=tiendas.filter(function(t){
+    if(zona&&t.zona!==zona)return false;
+    if(tech&&!asignaciones.some(function(a){return a.tiendaId===t.id&&a.year===year&&a.tecnico===tech;}))return false;
+    return true;
+  });
+  var qbg=['rgba(13,148,136,.12)','rgba(37,99,235,.12)','rgba(124,58,237,.12)','rgba(217,119,6,.12)'];
+  var html='<table class="cgrid"><thead><tr><th class="th-store">TIENDA</th><th class="th-zona">ZONA</th>';
+  MESES.forEach(function(m,i){html+='<th style="background:'+qbg[Math.floor(i/3)]+'" title="Q'+(Math.floor(i/3)+1)+'">'+m+'</th>';});
+  html+='</tr></thead><tbody>';
+  lista.forEach(function(t){
+    html+='<tr><td class="td-store">'+t.nombre.replace('OG ','')+'</td>';
+    html+='<td class="td-zona"><span class="badge '+(t.zona==='LIMA'?'b-blue':'b-purple')+'" style="font-size:9px">'+t.zona+'</span></td>';
+    for(var m=0;m<12;m++){
+      var trim=Math.floor(m/3)+1;
+      var a=asignInMonth(t.id,m,year);
+      var inQ=!!a;
+      var cls='month-cell ';
+      var inner='';
+      if(inQ){
+        if(a.estado==='completado'){cls+='mc-done';var bg='var(--green-l)';var col='var(--green)';}
+        else if(a.estado==='parcial'){cls+='mc-partial';var bg='var(--amber-l)';var col='var(--amber)';}
+        else{cls+='mc-planned';var bg='var(--blue-l)';var col='var(--blue)';}
+        var pct=calcProg(a);
+        inner='<div class="mc-inner"><span class="mc-tech" style="background:'+bg+';color:'+col+'">'+a.tecnico.substring(0,8)+'</span><span class="mc-pct">'+pct+'%</span></div>';
+      }else{
+        cls+='mc-empty';
+        inner='<span class="mc-plus">+</span>';
+      }
+      var qTrim=Math.floor(m/3)+1;
+      html+='<td class="'+cls+'" onclick="quickAssignMonth('+t.id+','+m+','+year+')" title="'+t.nombre+' · '+MESES[m]+'">'+inner+'</td>';
+    }
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById('cgWrap').innerHTML=html;
+}
+
+// ── TIENDAS ──
+function renderTiendas(){
+  var search=(document.getElementById('fTSearch').value||'').toLowerCase();
+  var zona=document.getElementById('fTZona').value;
+  var trim=getCurTrim(),year=getCurYear();
+  var list=tiendas.filter(function(t){
+    if(zona&&t.zona!==zona)return false;
+    if(search&&!t.nombre.toLowerCase().includes(search))return false;
+    return true;
+  });
+  document.getElementById('tiendaBody').innerHTML=list.map(function(t,i){
+    var eqs=getEqs(t.id);
+    var a=getAsignYear(t.id,year);
+    var lastMP=a&&a.fechaEjec?fmtDate(a.fechaEjec):'—';
+    var nextMP=a&&a.fechaEjec?fmtDate(calcNextMP(a.fechaEjec)):'Programar';
+    return '<tr>'
+      +'<td style="font-family:DM Mono,monospace;color:var(--muted);font-size:10px">'+(i+1)+'</td>'
+      +'<td><strong style="font-size:12px">'+t.nombre+'</strong></td>'
+      +'<td><span class="badge '+(t.zona==='LIMA'?'b-blue':'b-purple')+'" style="font-size:9px">'+t.zona+'</span></td>'
+      +'<td style="font-size:11px;color:var(--ink2)">'+t.ciudad+'</td>'
+      +'<td><button class="btn btn-ghost btn-sm" onclick="showEqs('+t.id+')" style="font-size:10px">'+eqs.length+' equipos 👁</button></td>'
+      +'<td style="font-size:10px">'+(a?'<span class="badge b-gray">'+a.tecnico+'</span>':'<span style="color:var(--muted)">—</span>')+'</td>'
+      +'<td style="font-family:DM Mono,monospace;font-size:10px">'+lastMP+'</td>'
+      +'<td style="font-size:11px;font-weight:600;color:'+(nextMP==='Programar'?'var(--red)':'var(--teal)')+'">'+nextMP+'</td>'
+      +'<td><button class="btn btn-teal btn-sm" onclick="quickAssign('+t.id+','+trim+','+year+')" style="font-size:10px">+ MP</button></td>'
+      +'</tr>';
+  }).join('');
+}
+
+function showEqs(tid){
+  var t=getTienda(tid);
+  var eqs=getEqs(tid);
+  document.getElementById('eqDetailTitle').textContent='Equipos: '+t.nombre+' ('+eqs.length+' equipos)';
+  document.getElementById('eqDetailBody').innerHTML=eqs.map(function(e){
+    return '<tr>'
+      +'<td style="font-family:DM Mono,monospace;font-size:10px;font-weight:600;color:var(--teal)">'+e.nro+'</td>'
+      +'<td style="font-weight:600">'+e.nombre+'</td>'
+      +'<td><span class="badge b-gray" style="font-size:9px">'+e.tipo+'</span></td>'
+      +'<td><span class="badge '+(e.frio_caliente==='FRIO'?'b-frio':'b-caliente')+'" style="font-size:9px">'+e.frio_caliente+'</span></td>'
+      +'<td style="font-size:10px;color:var(--muted)">'+e.ubicacion+'</td>'
+      +'<td style="font-size:10px">'+e.caracteristica+'</td>'
+      +'<td style="font-size:10px">'+e.marca+'</td>'
+      +'<td style="font-family:DM Mono,monospace;font-size:10px">'+e.serie+'</td>'
+      +'<td style="font-family:DM Mono,monospace;font-size:10px">'+e.voltaje+'V</td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('eqDetailCard').style.display='block';
+  document.getElementById('eqDetailCard').scrollIntoView({behavior:'smooth'});
+}
+
+// ── EJECUCIÓN ──
+function renderEjecucion(){
+  var trim=getCurTrim(),year=getCurYear();
+  var fTi=document.getElementById('fEjTienda').value;
+  var fTe=document.getElementById('fEjTech').value;
+  var fEs=document.getElementById('fEjEstado').value;
+  var list=tiendas.filter(function(t){
+    if(fTi&&t.id!==parseInt(fTi))return false;
+    var a=getAsignYear(t.id,year);
+    if(fTe&&(!a||a.tecnico!==fTe))return false;
+    if(fEs){var st=a?a.estado:'pendiente';if(st!==fEs)return false;}
+    return true;
+  });
+  var html='';
+  list.forEach(function(t){
+    var a=getAsignYear(t.id,year);
+    var eqs=getEqs(t.id);
+    var pct=a?calcProg(a):0;
+    var estado=a?a.estado:'pendiente';
+    var bc=estado==='completado'?'var(--green)':estado==='parcial'?'var(--amber)':'var(--border)';
+    html+='<div class="card" style="border-left:4px solid '+bc+';margin-bottom:10px">';
+    html+='<div class="card-hdr">';
+    html+='<div style="display:flex;align-items:center;gap:12px;flex:1;flex-wrap:wrap">';
+    html+='<div><div style="font-weight:800;font-size:13px">'+t.nombre+'</div>';
+    html+='<div style="font-size:10px;color:var(--muted)">'+t.zona+' · '+t.ciudad+(a?' · <strong>'+a.tecnico+'</strong>':'')+'</div></div>';
+    html+='<div style="min-width:160px"><div class="prog-bar" style="height:7px"><div class="prog-fill" style="width:'+pct+'%;background:'+(pct===100?'var(--green)':pct>0?'var(--amber)':'var(--border)')+'"></div></div>';
+    html+='<div style="font-size:10px;color:var(--muted);margin-top:2px">'+pct+'% · '+(a?a.eqRevisados.length:0)+'/'+eqs.length+' equipos</div></div>';
+    html+='</div>';
+    html+=estadoBadge(estado);
+    html+='<button class="btn btn-teal btn-sm" onclick="openEjecucion('+t.id+')">'+( a&&a.estado==='completado'?'👁 Ver':'▶ Registrar')+'</button>';
+    html+='</div>';
+    if(a&&eqs.length>0){
+      html+='<div style="padding:8px 16px 12px;display:flex;flex-wrap:wrap;gap:5px">';
+      eqs.forEach(function(eq){
+        var done=a&&a.eqRevisados.indexOf(eq.id)>=0;
+        html+='<span style="padding:2px 8px;border-radius:5px;font-size:9px;font-weight:600;background:'+(done?'var(--green-l)':'var(--surface2)')+';color:'+(done?'var(--green)':'var(--muted)')+';">'+(done?'✅ ':'○ ')+eq.nro+'</span>';
+      });
+      html+='</div>';
+    }
+    html+='</div>';
+  });
+  document.getElementById('ejecucionCards').innerHTML=html||'<div style="text-align:center;padding:48px;color:var(--muted)"><div style="font-size:36px;margin-bottom:10px">📋</div><div style="font-size:16px;font-weight:700">Sin asignaciones en Q'+getCurTrim()+' '+getCurYear()+'</div><div style="font-size:12px;margin-top:4px">Usa "+ Asignar MP" para comenzar</div></div>';
+}
+
+// ── TÉCNICOS ──
+function renderTecnicos(){
+  var trim=getCurTrim(),year=getCurYear();
+  function mpCnt(n){return asignaciones.filter(function(a){return a.tecnico===n&&a.year===year;}).length;}
+  var lima=tecnicos.filter(function(t){return t.tipo==='tecnico';});
+  var prov=tecnicos.filter(function(t){return t.tipo==='proveedor';});
+  document.getElementById('techLimaBody').innerHTML=lima.map(function(t){
+    var c=mpCnt(t.nombre);
+    var tds=tiendas.filter(function(ti){return asignaciones.some(function(a){return a.tiendaId===ti.id&&a.tecnico===t.nombre;});}).length;
+    return '<tr><td style="font-weight:700">'+t.nombre+'</td>'
+      +'<td style="text-align:center"><span class="badge b-green">'+c+' MP</span></td>'
+      +'<td style="text-align:center"><span class="badge b-teal">'+tds+' tiendas</span></td>'
+      +'<td><button class="btn btn-ghost btn-sm" onclick="deleteTec('+t.id+')" style="color:var(--red)">🗑</button></td></tr>';
+  }).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:14px">Sin técnicos</td></tr>';
+  document.getElementById('provBody').innerHTML=prov.map(function(t){
+    var c=mpCnt(t.nombre);
+    var tds=tiendas.filter(function(ti){return asignaciones.some(function(a){return a.tiendaId===ti.id&&a.tecnico===t.nombre;});}).length;
+    return '<tr><td style="font-weight:700">'+t.nombre+'</td>'
+      +'<td style="font-size:11px;color:var(--muted)">'+t.region+'</td>'
+      +'<td style="text-align:center"><span class="badge b-green">'+c+' MP</span></td>'
+      +'<td style="text-align:center"><span class="badge b-purple">'+tds+' tiendas</span></td>'
+      +'<td><button class="btn btn-ghost btn-sm" onclick="deleteTec('+t.id+')" style="color:var(--red)">🗑</button></td></tr>';
+  }).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:14px">Sin proveedores</td></tr>';
+}
+
+// ── MODALS ──
+function openModal(id){
+  populateSelects();
+  if(id==='mAsignar'){
+    var trim=getCurTrim(),year=getCurYear();
+    document.getElementById('aYear').value=year;
+    document.getElementById('aMesIni').value=TRIM_MESES[trim][0];
+    document.getElementById('aMesFin').value=TRIM_MESES[trim][2];
+    document.getElementById('aFechaIni').value=today();
+    document.getElementById('aFechaFin').value=today();
+    document.getElementById('aNotas').value='';
+    document.getElementById('aEqList').innerHTML='<span style="color:var(--muted);font-size:11px">Selecciona una tienda</span>';
+    updateMesesPreview();
+  }
+  document.getElementById(id).style.display='flex';
+}
+function closeModal(id){document.getElementById(id).style.display='none';}
+
+function autoMesFin(){
+  var ini=parseInt(document.getElementById('aMesIni').value);
+  // Auto-suggest same month (single month MP), user can change
+  document.getElementById('aMesFin').value=ini;
+  updateMesesPreview();
+}
+
+function updateMesesPreview(){
+  var ini=parseInt(document.getElementById('aMesIni').value);
+  var fin=parseInt(document.getElementById('aMesFin').value);
+  var year=parseInt(document.getElementById('aYear').value)||getCurYear();
+  var meses=[];
+  for(var m=ini;m<=fin;m++) meses.push(MESES[m]);
+  var trimestre=fin<3?'Q1':fin<6?'Q2':fin<9?'Q3':'Q4';
+  var txt='📅 ';
+  if(ini===fin){txt+='MP en <strong>'+MESES[ini]+' '+year+'</strong> ('+ trimestre+')';}
+  else{txt+='MP de <strong>'+MESES[ini]+'</strong> a <strong>'+MESES[fin]+' '+year+'</strong> · '+meses.join(', ');}
+  document.getElementById('aMesesPreview').innerHTML=txt;
+  // Also auto-set fecha inicio to first day of mesIni
+  var fi=new Date(year,ini,1);
+  document.getElementById('aFechaIni').value=fi.toISOString().split('T')[0];
+  var ff=new Date(year,fin+1,0);
+  document.getElementById('aFechaFin').value=ff.toISOString().split('T')[0];
+}
+
+function quickAssignMonth(tid,month,year){
+  populateSelects();
+  document.getElementById('aTienda').value=tid;
+  document.getElementById('aYear').value=year;
+  document.getElementById('aMesIni').value=month;
+  document.getElementById('aMesFin').value=month;
+  document.getElementById('aNotas').value='';
+  updateMesesPreview();
+  updateAEquipos();
+  document.getElementById('mAsignar').style.display='flex';
+}
+
+function quickAssign(tid,trim,year){
+  quickAssignMonth(tid,TRIM_MESES[trim][0],year);
+}
+
+function updateAEquipos(){
+  var tid=parseInt(document.getElementById('aTienda').value);
+  if(!tid){document.getElementById('aEqList').innerHTML='<span style="color:var(--muted);font-size:11px">Selecciona una tienda</span>';return;}
+  var eqs=getEqs(tid);
+  document.getElementById('aEqList').innerHTML=eqs.map(function(e){
+    return '<label style="display:flex;align-items:center;gap:8px;padding:3px 2px;cursor:pointer;font-size:11px">'
+      +'<input type="checkbox" class="eq-check" value="'+e.id+'" checked>'
+      +'<span style="flex:1"><strong>'+e.nro+'</strong> — '+e.nombre+'</span>'
+      +'<span class="badge '+(e.frio_caliente==='FRIO'?'b-frio':'b-caliente')+'" style="font-size:8px">'+e.frio_caliente+'</span>'
+      +'<span class="badge b-gray" style="font-size:8px">'+e.ubicacion+'</span>'
+      +'</label>';
+  }).join('')||'<span style="color:var(--muted);font-size:11px">Sin equipos registrados</span>';
+}
+
+function openEjecucion(tid){
+  var year=getCurYear();
+  var t=getTienda(tid);
+  var a=getAsignYear(tid,year);
+  curEjId=a?a.id:null;
+  var periodoTxt=a?(MESES[a.mesIni]+(a.mesIni!==a.mesFin?' – '+MESES[a.mesFin]:'')+' '+year):'Sin asignación';
+  document.getElementById('mEjTitulo').textContent='MP: '+t.nombre;
+  document.getElementById('mEjSub').textContent=t.zona+' · '+periodoTxt+(a?' · '+a.tecnico:'');
+  document.getElementById('ejFecha').value=a&&a.fechaEjec?a.fechaEjec:today();
+  document.getElementById('ejTech').value=a?a.tecnico:'—';
+  document.getElementById('ejObs').value=a&&a.obs?a.obs:'';
+  var eqs=getEqs(tid);
+  var revisados=a?a.eqRevisados:[];
+  var html='<table class="equipo-tbl"><thead><tr><th style="width:36px">✓</th><th>NRO.</th><th>NOMBRE EQUIPO</th><th>TIPO</th><th>FRIO/CAL.</th><th>UBICACIÓN</th><th>MARCA</th></tr></thead><tbody>';
+  eqs.forEach(function(eq){
+    var done=revisados.indexOf(eq.id)>=0;
+    html+='<tr style="'+(done?'background:var(--green-l)':'')+'"><td><input type="checkbox" class="eq-check" id="ejEq'+eq.id+'" value="'+eq.id+'"'+(done?' checked':'')+'></td>'
+      +'<td style="font-family:DM Mono,monospace;font-size:10px;font-weight:600;color:var(--teal)">'+eq.nro+'</td>'
+      +'<td style="font-weight:600;font-size:11px">'+eq.nombre+'</td>'
+      +'<td style="font-size:10px;color:var(--muted)">'+eq.tipo+'</td>'
+      +'<td><span class="badge '+(eq.frio_caliente==='FRIO'?'b-frio':'b-caliente')+'" style="font-size:8px">'+eq.frio_caliente+'</span></td>'
+      +'<td style="font-size:10px;color:var(--muted)">'+eq.ubicacion+'</td>'
+      +'<td style="font-size:10px">'+eq.marca+'</td></tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById('ejChecklist').innerHTML=html;
+  document.getElementById('mEjecutar').style.display='flex';
+}
+
+// ── SAVE ──
+function saveAsignacion(){
+  var tid=parseInt(document.getElementById('aTienda').value);
+  var tech=document.getElementById('aTecnico').value;
+  if(!tid){showToast('⚠ Selecciona una tienda');return;}
+  if(!tech){showToast('⚠ Selecciona un técnico');return;}
+  var mesIni=parseInt(document.getElementById('aMesIni').value);
+  var mesFin=parseInt(document.getElementById('aMesFin').value);
+  var year=parseInt(document.getElementById('aYear').value);
+  if(mesFin<mesIni){showToast('⚠ El mes fin no puede ser anterior al mes inicio');return;}
+  var checks=document.querySelectorAll('#aEqList input[type=checkbox]');
+  var eqIds=[];checks.forEach(function(c){if(c.checked)eqIds.push(parseInt(c.value));});
+  // Remove any existing assignment for this tienda+year (may span different months now)
+  asignaciones=asignaciones.filter(function(a){return !(a.tiendaId===tid&&a.year===year);});
+  asignaciones.push({id:nextAid++,tiendaId:tid,tecnico:tech,year:year,
+    mesIni:mesIni,mesFin:mesFin,
+    fechaIni:document.getElementById('aFechaIni').value,fechaFin:document.getElementById('aFechaFin').value,
+    notas:document.getElementById('aNotas').value,eqAsignados:eqIds,eqRevisados:[],
+    estado:'pendiente',obs:'',fechaEjec:''});
+  closeModal('mAsignar');
+  var t=getTienda(tid);refreshAll();
+  showToast('✅ MP asignado: '+t.nombre+' → '+tech+' ('+MESES[mesIni]+(mesIni!==mesFin?' – '+MESES[mesFin]:'')+' '+year+') · '+eqIds.length+' equipos');
+}
+
+function saveEj(completar){
+  if(!curEjId){showToast('⚠ Sin asignación activa');return;}
+  var a=asignaciones.find(function(x){return x.id===curEjId;});
+  if(!a)return;
+  var checks=document.querySelectorAll('#ejChecklist input[type=checkbox]');
+  var rev=[];checks.forEach(function(c){if(c.checked)rev.push(parseInt(c.value));});
+  a.eqRevisados=rev;a.obs=document.getElementById('ejObs').value;
+  a.fechaEjec=document.getElementById('ejFecha').value;
+  a.estado=completar?'completado':(rev.length>0?'parcial':'pendiente');
+  closeModal('mEjecutar');refreshAll();
+  var t=getTienda(a.tiendaId);
+  showToast((completar?'✅ Completado':'💾 Guardado')+': '+t.nombre+' ('+rev.length+'/'+a.eqAsignados.length+' eq.)');
+}
+
+function saveTecnico(){
+  var n=document.getElementById('tcNombre').value.trim();
+  if(!n){showToast('⚠ Nombre requerido');return;}
+  tecnicos.push({id:nextTecId++,nombre:n,tipo:document.getElementById('tcTipo').value,region:document.getElementById('tcRegion').value,contacto:document.getElementById('tcContacto').value});
+  closeModal('mTecnico');refreshAll();showToast('✅ '+n+' agregado');
+}
+
+function deleteTec(id){
+  if(!confirm('¿Eliminar?'))return;
+  tecnicos=tecnicos.filter(function(t){return t.id!==id;});
+  renderTecnicos();populateSelects();showToast('🗑 Eliminado');
+}
+
+// ── EXPORT EXCEL ──
+function exportExcel(){
+  var year=getCurYear();
+  var wb={SheetNames:[],Sheets:{}};
+  var brd={style:'thin',color:{rgb:'FFE2E8F0'}};
+  var B={top:brd,bottom:brd,left:brd,right:brd};
+  function st(bg,txt,bold,sz){return{fill:{fgColor:{rgb:bg||'FFFFFFFF'}},font:{bold:!!bold,color:{rgb:txt||'FF0F172A'},sz:sz||10,name:'Calibri'},alignment:{horizontal:'center',vertical:'center',wrapText:true},border:B};}
+  function ce(ws,r,c,v,s){var a=XLSX.utils.encode_cell({r:r,c:c});ws[a]={v:v===undefined?'':String(v),t:'s',s:s};}
+
+  // Sheet 1: Cronograma
+  var ws1={};
+  ce(ws1,0,0,'TIENDA',st('FF0F172A','FFFFFFFF',true));
+  ce(ws1,0,1,'ZONA',st('FF0F172A','FFFFFFFF',true));
+  MESES.forEach(function(m,i){ce(ws1,0,2+i,m+' Q'+(Math.floor(i/3)+1),st('FF0F172A','FFFFFFFF',true,9));});
+  tiendas.forEach(function(t,ri){
+    var bgR=ri%2===0?'FFFFFFFF':'FFF8FAFC';
+    ce(ws1,ri+1,0,t.nombre,st(bgR,'FF0F172A',true));
+    ce(ws1,ri+1,1,t.zona,st(t.zona==='LIMA'?'FFEFF6FF':'FFF5F3FF',t.zona==='LIMA'?'FF2563EB':'FF7C3AED',true,9));
+    for(var m=0;m<12;m++){
+      var trim=Math.floor(m/3)+1;
+      var a=getAsignYear(t.id,year);
+      var inQ=a&&a.mesIni<=m&&a.mesFin>=m;
+      var val='',bg=bgR;
+      if(inQ){val=a.tecnico+' ('+calcProg(a)+'%)';bg=a.estado==='completado'?'FFF0FDF4':a.estado==='parcial'?'FFFEFCE8':'FFEFF6FF';}
+      ce(ws1,ri+1,2+m,val,st(bg,'FF0F172A',false,9));
+    }
+  });
+  ws1['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:tiendas.length,c:13}});
+  ws1['!cols']=[{wch:24},{wch:10}].concat(Array(12).fill({wch:12}));
+  wb.SheetNames.push('Cronograma '+year);wb.Sheets['Cronograma '+year]=ws1;
+
+  // Sheet 2: Asignaciones
+  var ws2={};
+  ['AÑO','MES MP','TIENDA','ZONA','TÉCNICO','F.INICIO','F.FIN','EQ.ASIGN.','EQ.REVIS.','% AVANCE','ESTADO','OBS.'].forEach(function(v,i){ce(ws2,0,i,v,st('FF0D9488','FFFFFFFF',true,10));});
+  asignaciones.forEach(function(a,ri){
+    var t=getTienda(a.tiendaId);
+    var bg=a.estado==='completado'?'FFF0FDF4':a.estado==='parcial'?'FFFEFCE8':'FFFEF2F2';
+    [a.year,MESES[a.mesIni]+(a.mesIni!==a.mesFin?' – '+MESES[a.mesFin]:''),t?t.nombre:'—',t?t.zona:'—',a.tecnico,fmtDate(a.fechaIni),fmtDate(a.fechaFin),a.eqAsignados.length,a.eqRevisados.length,calcProg(a)+'%',a.estado.toUpperCase(),a.obs||''].forEach(function(v,ci){ce(ws2,ri+1,ci,v,st(bg,'FF0F172A',false,9));});
+  });
+  ws2['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(asignaciones.length,1),c:11}});
+  ws2['!cols']=[{wch:5},{wch:5},{wch:24},{wch:10},{wch:18},{wch:10},{wch:10},{wch:8},{wch:8},{wch:8},{wch:12},{wch:30}];
+  wb.SheetNames.push('Asignaciones');wb.Sheets['Asignaciones']=ws2;
+
+  // Sheet 3: Equipos reales
+  var ws3={};
+  ['TIENDA','ZONA','NRO.','NOMBRE EQUIPO','TIPO','FRÍO/CAL.','UBICACIÓN','CARACTERÍSTICA','MARCA','MODELO','SERIE','VOLTAJE'].forEach(function(v,i){ce(ws3,0,i,v,st('FF0D9488','FFFFFFFF',true,9));});
+  equipos.forEach(function(e,ri){
+    var t=getTienda(e.tiendaId);
+    var bg=ri%2===0?'FFFFFFFF':'FFF0FDFA';
+    [t?t.nombre:'—',t?t.zona:'—',e.nro,e.nombre,e.tipo,e.frio_caliente,e.ubicacion,e.caracteristica,e.marca,e.modelo,e.serie,e.voltaje+'V'].forEach(function(v,ci){ce(ws3,ri+1,ci,v,st(bg,'FF0F172A',false,9));});
+  });
+  ws3['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:equipos.length,c:11}});
+  ws3['!cols']=[{wch:24},{wch:10},{wch:8},{wch:28},{wch:14},{wch:8},{wch:12},{wch:14},{wch:12},{wch:12},{wch:10},{wch:7}];
+  wb.SheetNames.push('Equipos');wb.Sheets['Equipos']=ws3;
+
+  XLSX.writeFile(wb,'cronograma_mp_'+year+'.xlsx',{bookSST:false,type:'binary',cellStyles:true});
+  showToast('✅ Excel exportado: cronograma_mp_'+year+'.xlsx');
+}
+
+// ── TOAST ──
+function showToast(msg){
+  var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},3200);
+}
+
+document.getElementById('aTienda').addEventListener('change',updateAEquipos);
+document.getElementById('aMesIni').addEventListener('change',updateMesesPreview);
+document.getElementById('aMesFin').addEventListener('change',updateMesesPreview);
+document.getElementById('aYear').addEventListener('change',updateMesesPreview);
+populateSelects();
+refreshAll();
+</script>
+</body>
+</html>
