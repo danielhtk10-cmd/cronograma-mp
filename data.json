@@ -39,6 +39,74 @@
       "estado": "completado",
       "obs": "",
       "fechaEjec": "2026-03-13"
+    },
+    {
+      "id": 3,
+      "tiendaId": 2,
+      "tecnico": "JESUS",
+      "year": 2026,
+      "mesIni": 2,
+      "mesFin": 2,
+      "fechaIni": "2026-03-01",
+      "fechaFin": "2026-03-31",
+      "notas": "",
+      "eqAsignados": [
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26
+      ],
+      "eqRevisados": [
+        23
+      ],
+      "estado": "parcial",
+      "obs": "",
+      "fechaEjec": "2026-03-13"
+    },
+    {
+      "id": 4,
+      "tiendaId": 8,
+      "tecnico": "JOSE",
+      "year": 2026,
+      "mesIni": 2,
+      "mesFin": 2,
+      "fechaIni": "2026-03-01",
+      "fechaFin": "2026-03-31",
+      "notas": "",
+      "eqAsignados": [
+        355,
+        356,
+        357,
+        358,
+        359,
+        360,
+        361,
+        362,
+        363
+      ],
+      "eqRevisados": [
+        355,
+        356,
+        357,
+        358,
+        359,
+        360,
+        361,
+        362,
+        363
+      ],
+      "estado": "completado",
+      "obs": "",
+      "fechaEjec": "2026-03-13"
     }
   ],
   "tecnicos": [
@@ -74,23 +142,23 @@
     },
     {
       "id": 6,
-      "nombre": "Frío Norte SAC",
+      "nombre": "FrÃ­o Norte SAC",
       "tipo": "proveedor",
       "region": "Norte (Trujillo, Chiclayo, Piura)"
     },
     {
       "id": 7,
-      "nombre": "Frío Centro SAC",
+      "nombre": "FrÃ­o Centro SAC",
       "tipo": "proveedor",
       "region": "Centro (Huancayo)"
     },
     {
       "id": 8,
-      "nombre": "Frío Sur SAC",
+      "nombre": "FrÃ­o Sur SAC",
       "tipo": "proveedor",
       "region": "Sur (Arequipa, Cusco, Ica, Juliaca)"
     }
   ],
-  "nextAid": 2,
+  "nextAid": 5,
   "nextTecId": 9
 }
