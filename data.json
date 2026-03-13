@@ -1,0 +1,96 @@
+{
+  "asignaciones": [
+    {
+      "id": 1,
+      "tiendaId": 4,
+      "tecnico": "JESUS",
+      "year": 2026,
+      "mesIni": 2,
+      "mesFin": 2,
+      "fechaIni": "2026-03-01",
+      "fechaFin": "2026-03-31",
+      "notas": "",
+      "eqAsignados": [
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50
+      ],
+      "eqRevisados": [
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50
+      ],
+      "estado": "completado",
+      "obs": "",
+      "fechaEjec": "2026-03-13"
+    }
+  ],
+  "tecnicos": [
+    {
+      "id": 1,
+      "nombre": "WILLY",
+      "tipo": "tecnico",
+      "region": "Lima"
+    },
+    {
+      "id": 2,
+      "nombre": "YERSON",
+      "tipo": "tecnico",
+      "region": "Lima"
+    },
+    {
+      "id": 3,
+      "nombre": "JOSE",
+      "tipo": "tecnico",
+      "region": "Lima"
+    },
+    {
+      "id": 4,
+      "nombre": "JESUS",
+      "tipo": "tecnico",
+      "region": "Lima"
+    },
+    {
+      "id": 5,
+      "nombre": "JHON",
+      "tipo": "tecnico",
+      "region": "Lima"
+    },
+    {
+      "id": 6,
+      "nombre": "Frío Norte SAC",
+      "tipo": "proveedor",
+      "region": "Norte (Trujillo, Chiclayo, Piura)"
+    },
+    {
+      "id": 7,
+      "nombre": "Frío Centro SAC",
+      "tipo": "proveedor",
+      "region": "Centro (Huancayo)"
+    },
+    {
+      "id": 8,
+      "nombre": "Frío Sur SAC",
+      "tipo": "proveedor",
+      "region": "Sur (Arequipa, Cusco, Ica, Juliaca)"
+    }
+  ],
+  "nextAid": 2,
+  "nextTecId": 9
+}
