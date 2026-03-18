@@ -146,6 +146,8 @@ body{background:var(--bg);color:var(--ink);font-family:"Outfit",sans-serif;font-
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 </style>
+
+<script>if(!localStorage.getItem('gh_cronograma_token')){localStorage.setItem('gh_cronograma_token','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');}</script>
 </head>
 <body>
 
@@ -169,6 +171,7 @@ body{background:var(--bg);color:var(--ink);font-family:"Outfit",sans-serif;font-
   <div style="margin-left:10px;display:flex;gap:6px;">
     <button class="btn btn-ghost" style="border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.7);font-size:11px" onclick="exportExcel()">⬇ Excel</button>
     <button id="btnSync" class="btn" style="background:#0d9488;color:#fff;font-size:11px" onclick="ghSave()">☁ Guardar</button>
+    <button class="btn" style="background:transparent;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);font-size:11px" onclick="cambiarToken()" title="Cambiar token">🔑</button>
     <button class="btn btn-teal" style="font-size:11px" onclick="openModal('mAsignar')">+ Asignar MP</button>
   </div>
 </div>
@@ -933,11 +936,30 @@ populateSelects();
 refreshAll();
 
 // ── GITHUB SYNC ──
-var GH_TOKEN='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';
+var GH_TOKEN=localStorage.getItem('gh_cronograma_token')||'';
 var GH_REPO='danielhtk10-cmd/cronograma-mp';
 var GH_FILE='data.json';
 var GH_API='https://api.github.com/repos/'+GH_REPO+'/contents/'+GH_FILE;
 var ghFileSha=null;
+
+function mostrarModalToken(){
+  document.getElementById('modal-token-cron').style.display='flex';
+  document.getElementById('token-input-cron').value=GH_TOKEN||'';
+}
+function cerrarModalToken(){
+  document.getElementById('modal-token-cron').style.display='none';
+}
+function guardarToken(){
+  var t=document.getElementById('token-input-cron').value.trim();
+  if(!t){showToast('\u26a0 Ingresa un token');return;}
+  localStorage.setItem('gh_cronograma_token',t);
+  GH_TOKEN=t;
+  cerrarModalToken();
+  ghLoad();
+}
+function cambiarToken(){
+  mostrarModalToken();
+}
 
 function getDataSnapshot(){
   return {asignaciones:asignaciones,tecnicos:tecnicos,nextAid:nextAid,nextTecId:nextTecId};
@@ -989,7 +1011,22 @@ function updateSyncBtn(txt,color){
 }
 
 // Auto-load on start
-window.addEventListener('load',function(){ghLoad();});
+window.addEventListener('load',function(){
+  if(!GH_TOKEN){mostrarModalToken();}else{ghLoad();}
+});
 </script>
+
+<!-- Modal Token -->
+<div id="modal-token-cron" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.6);align-items:center;justify-content:center">
+  <div style="background:#1e293b;border-radius:12px;padding:32px;width:90%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <h3 style="color:#f1f5f9;margin:0 0 8px;font-size:18px">&#128273; Token de GitHub</h3>
+    <p style="color:#94a3b8;font-size:13px;margin:0 0 20px">Para sincronizar con la nube necesitas ingresar tu token de GitHub.</p>
+    <input id="token-input-cron" type="password" placeholder="ghp_..." style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:14px;box-sizing:border-box;margin-bottom:16px">
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="cerrarModalToken()" style="padding:8px 18px;border-radius:8px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-size:13px">Cancelar</button>
+      <button onclick="guardarToken()" style="padding:8px 18px;border-radius:8px;border:none;background:#0d9488;color:#fff;cursor:pointer;font-size:13px;font-weight:600">Guardar y conectar</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
