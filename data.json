@@ -464,6 +464,77 @@
       "estado": "completado",
       "obs": "",
       "fechaEjec": "2026-01-01"
+    },
+    {
+      "id": 14,
+      "tiendaId": 12,
+      "tecnico": "SOL ELIMAR",
+      "year": 2026,
+      "mesIni": 2,
+      "mesFin": 2,
+      "fechaIni": "2026-03-24",
+      "fechaFin": "2026-03-31",
+      "notas": "",
+      "eqAsignados": [
+        292,
+        293,
+        294,
+        295,
+        296,
+        297,
+        298,
+        299,
+        300,
+        301,
+        302,
+        303,
+        304
+      ],
+      "eqRevisados": [
+        293,
+        297,
+        298,
+        299,
+        300,
+        301
+      ],
+      "estado": "parcial",
+      "obs": "",
+      "fechaEjec": "2026-03-18"
+    },
+    {
+      "id": 15,
+      "tiendaId": 7,
+      "tecnico": "SOL ELIMAR",
+      "year": 2026,
+      "mesIni": 2,
+      "mesFin": 2,
+      "fechaIni": "2026-03-24",
+      "fechaFin": "2026-03-31",
+      "notas": "",
+      "eqAsignados": [
+        258,
+        259,
+        260,
+        261,
+        262,
+        263,
+        264,
+        265,
+        266,
+        267,
+        268
+      ],
+      "eqRevisados": [
+        263,
+        264,
+        265,
+        266,
+        267
+      ],
+      "estado": "parcial",
+      "obs": "",
+      "fechaEjec": "2026-03-18"
     }
   ],
   "tecnicos": [
@@ -514,8 +585,15 @@
       "nombre": "FrÃÂ­o Sur SAC",
       "tipo": "proveedor",
       "region": "Sur (Arequipa, Cusco, Ica, Juliaca)"
+    },
+    {
+      "id": 9,
+      "nombre": "SOL ELIMAR",
+      "tipo": "proveedor",
+      "region": "ZONA SUR ",
+      "contacto": ""
     }
   ],
-  "nextAid": 14,
-  "nextTecId": 9
+  "nextAid": 16,
+  "nextTecId": 10
 }
